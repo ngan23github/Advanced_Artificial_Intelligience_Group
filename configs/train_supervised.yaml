@@ -1,0 +1,20 @@
+# Huấn luyện NN (cấp 5). Điền cho đủ thông tin theo mục 3.4 của đề.
+seed: 42
+data:
+  source: expert_selfplay      # nguồn nhãn: ghi rõ agent nào sinh ván (nguy cơ học lại heuristic)
+  expert_agent: alphabeta
+  num_games: 5000              # TODO: chốt sau khi thử
+  dedupe: true
+  split_by_game: true          # chia THEO VÁN, không chia theo từng nước
+  split: {train: 0.8, val: 0.1, test: 0.1}
+model:
+  type: policy_value           # policy, value hoặc cả hai
+  hidden: 128                  # TODO: chốt kiến trúc
+train:
+  epochs: 30
+  batch_size: 256
+  lr: 0.001
+  optimizer: adam
+output:
+  checkpoint_dir: checkpoints/
+  log_dir: results/logs/

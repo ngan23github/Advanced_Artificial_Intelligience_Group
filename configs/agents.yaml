@@ -1,0 +1,31 @@
+# Cấu hình mặc định của từng tác tử. Giá trị dưới đây chỉ là điểm xuất phát,
+# chỉnh lại sau khi thử nghiệm (chọn trên tập tune, không dùng ván đánh giá cuối).
+random:
+  seed: 0
+
+heuristic:
+  # thứ tự ưu tiên luật, ghi rõ trong báo cáo cả trường hợp xung đột luật
+  priorities: [take_corner, avoid_x_square, avoid_c_square, maximize_mobility, maximize_discs]
+
+alphabeta:
+  depth: 4
+  pruning: true            # false = Minimax thuần, dùng cho ablation
+  move_ordering: true
+  eval:
+    disc_diff: true
+    mobility: true
+    corners: true
+    x_c_squares: true
+    stability: false
+
+mcts:
+  simulations: 1000
+  exploration_c: 1.414     # hằng số UCT
+  rollout_policy: random
+  seed: 0
+
+nn:
+  checkpoint: checkpoints/nn_supervised.pt
+
+rl:
+  checkpoint: checkpoints/rl_selfplay.pt

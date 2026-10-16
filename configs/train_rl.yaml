@@ -1,0 +1,23 @@
+# Huấn luyện RL / self-play (cấp 6). Ghi đủ reward, số episode, exploration, mạng, siêu tham số.
+seed: 42
+method: policy_gradient        # TODO: chốt (Q-learning không hợp 8x8, nên dùng policy gradient / deep RL)
+reward:
+  win: 1.0
+  draw: 0.0
+  loss: -1.0
+episodes: 20000                # TODO: chốt theo tài nguyên
+exploration:
+  type: epsilon_greedy
+  epsilon_start: 1.0
+  epsilon_end: 0.05
+  decay_episodes: 10000
+model:
+  hidden: 128
+train:
+  lr: 0.0005
+  gamma: 1.0
+  batch_size: 128
+checkpoint_every: 1000
+output:
+  checkpoint_dir: checkpoints/
+  log_dir: results/logs/

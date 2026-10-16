@@ -1,0 +1,76 @@
+Advanced_Artificial_Intelligience_Group/
+├── README.md                  # cài đặt, train, evaluate, demo (bắt buộc)
+├── requirements.txt           # ghi rõ phiên bản thư viện
+├── CONTRIBUTIONS.md           # phân công + tỷ lệ đóng góp từng thành viên
+├── CREDITS.md                 # phần tự cài đặt vs phần kế thừa/tham khảo/AI
+├── .gitignore
+│
+├── configs/                   # mọi tham số thí nghiệm nằm ở đây, không hard-code
+│   ├── game.yaml              # cỡ bàn (6 hoặc 8), luật pass
+│   ├── agents.yaml            # cấu hình mặc định từng agent
+│   ├── train_supervised.yaml  # siêu tham số NN, tỷ lệ chia train/val/test
+│   ├── train_rl.yaml          # reward, số episode, exploration...
+│   └── tournament.yaml        # số ván/cặp, seed, ngân sách thời gian/mô phỏng
+│
+├── othello/                   # lõi game (cấp "hệ thống")
+│   ├── __init__.py
+│   ├── game.py                # reset, legal_actions, step, is_terminal, result, render, clone/undo
+│   ├── rules.py               # lật quân, pass, kết thúc ván
+│   └── encoding.py            # biến state thành tensor cho NN (kênh quân mình/đối thủ/lượt đi)
+│
+├── agents/
+│   ├── base.py                # lớp Agent chung: select_action(game, time_budget)
+│   ├── random_agent.py        # cấp 1
+│   ├── heuristic_agent.py     # cấp 2: góc, X/C-squares, mobility, thứ tự ưu tiên luật
+│   ├── alphabeta_agent.py     # cấp 3: có cờ bật/tắt cắt tỉa, đếm số nút
+│   ├── mcts_agent.py          # cấp 4: UCT, tham số số mô phỏng
+│   ├── nn_agent.py            # cấp 5: policy/value từ supervised
+│   ├── rl_agent.py            # cấp 6: self-play
+│   └── az_inspired/           # cấp 7–8 (chỉ làm sau khi xong phần bắt buộc)
+│       ├── network.py
+│       ├── puct_mcts.py
+│       └── selfplay_loop.py
+│
+├── models/
+│   └── nets.py                # kiến trúc mạng (dùng chung cho cấp 5–8)
+│
+├── train/
+│   ├── generate_data.py       # sinh ván từ expert/self-play, loại trùng, lưu theo ván
+│   ├── train_supervised.py    # chia train/val/test THEO VÁN, lưu checkpoint + seed
+│   └── train_rl.py            # lưu learning curve
+│
+├── eval/
+│   ├── tournament.py          # round-robin, chia đều đi trước/sau, nhiều seed
+│   ├── ablations.py           # AB bật/tắt cắt tỉa, MCTS đổi số mô phỏng, heuristic bật/tắt
+│   ├── metrics.py             # win/draw/loss, score, p95 latency, Wilson CI
+│   └── profile_cost.py        # thời gian/nước, số nút, số mô phỏng, RAM
+│
+├── ui/
+│   └── app.py                 # Pygame/Tkinter: người–máy, máy–máy, chọn cấp AI
+│
+├── tests/                     # pytest
+│   ├── test_game_rules.py     # lật quân, pass, kết thúc, hòa, nước sai
+│   ├── test_perft.py          # đếm nút so với dãy chuẩn 4, 12, 56, 244, 1396...
+│   ├── test_agents.py         # agent luôn trả nước hợp lệ
+│   └── test_metrics.py
+│
+├── scripts/                   # chạy lại toàn bộ thí nghiệm bằng 1 lệnh
+│   ├── run_tournament.sh
+│   ├── run_ablations.sh
+│   └── run_training.sh
+│
+├── notebooks/                 # tạo bảng/hình từ log thô (đề yêu cầu)
+│   ├── 01_tournament_results.ipynb
+│   ├── 02_ablations.ipynb
+│   └── 03_learning_curves.ipynb
+│
+├── checkpoints/               # weights (nếu dung lượng cho phép)
+├── data/                      # dữ liệu mẫu nhỏ; dữ liệu lớn ghi cách tái sinh trong README
+├── results/
+│   ├── logs/                  # log thô từng ván (JSON/CSV), KHÔNG chỉnh tay
+│   └── figures/
+│
+└── docs/
+    ├── report/                # báo cáo 5 chương
+    ├── slides/
+    └── poster/

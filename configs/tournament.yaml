@@ -1,0 +1,30 @@
+# Giải đấu round-robin. Theo đề: tối thiểu 100 ván/cặp (khuyến nghị 200),
+# chia đều đi trước / đi sau, nhiều seed, báo cáo ít nhất 2 chế độ ngân sách.
+games_per_pair: 200
+swap_sides: true             # một nửa số ván đổi bên đi trước
+seeds: [0, 1, 2]
+agents: [random, heuristic, alphabeta, mcts, nn, rl]
+
+budget_modes:
+  - name: time_per_move      # cùng thời gian suy nghĩ mỗi nước
+    time_ms: 500
+  - name: default_config     # cấu hình mặc định minh bạch (xem configs/agents.yaml)
+    time_ms: null
+
+metrics:
+  - win_draw_loss
+  - score                    # (thắng + 0.5 * hòa) / tổng số ván
+  - avg_time_per_move
+  - latency_p95
+  - nodes_or_simulations
+  - memory
+confidence_interval: wilson  # khoảng tin cậy Wilson
+
+ablations:
+  - alphabeta_pruning_on_off
+  - mcts_num_simulations     # ví dụ 100, 500, 1000, 5000
+  - heuristic_components_on_off
+
+output:
+  log_dir: results/logs/
+  figure_dir: results/figures/
