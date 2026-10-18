@@ -1,76 +1,83 @@
 Advanced_Artificial_Intelligience_Group/
-├── README.md                  # cài đặt, train, evaluate, demo (bắt buộc)
-├── requirements.txt           # ghi rõ phiên bản thư viện
-├── CONTRIBUTIONS.md           # phân công + tỷ lệ đóng góp từng thành viên
-├── CREDITS.md                 # phần tự cài đặt vs phần kế thừa/tham khảo/AI
+├── README.md                      # [xong] giới thiệu, luật, cài đặt, cách chạy, trạng thái
+├── API.md                         # [xong] quy ước board/action/pass + chữ ký hàm game và agent (cả nhóm phải giữ)
+├── Structure.txt                  # file này
+├── requirements.txt               # [xong] numpy, pyyaml, pytest (thêm torch/pygame/matplotlib khi cần, ghi rõ phiên bản)
+├── pytest.ini                     # [xong] mặc định bỏ test chậm; chạy test chậm bằng `pytest -m slow`
+├── CONTRIBUTIONS.md               # [xong, còn TODO] phân công + tỷ lệ đóng góp từng thành viên
+├── CREDITS.md                     # [xong, còn TODO] phần tự cài đặt vs kế thừa/tham khảo/AI
 ├── .gitignore
 │
-├── configs/                   # mọi tham số thí nghiệm nằm ở đây, không hard-code
-│   ├── game.yaml              # cỡ bàn (6 hoặc 8), luật pass
-│   ├── agents.yaml            # cấu hình mặc định từng agent
-│   ├── train_supervised.yaml  # siêu tham số NN, tỷ lệ chia train/val/test
-│   ├── train_rl.yaml          # reward, số episode, exploration...
-│   └── tournament.yaml        # số ván/cặp, seed, ngân sách thời gian/mô phỏng
+├── configs/                       # mọi tham số thí nghiệm nằm ở đây, không hard-code
+│   ├── game.yaml                  # [chép] cỡ bàn (hiện cố định 8x8), luật pass
+│   ├── agents.yaml                # [chép] cấu hình mặc định từng agent
+│   ├── train_supervised.yaml      # [chép] siêu tham số NN, tỷ lệ chia train/val/test
+│   ├── train_rl.yaml              # [chép] reward, số episode, exploration...
+│   └── tournament.yaml            # [chép] số ván/cặp, seed, ngân sách thời gian/mô phỏng
 │
-├── othello/                   # lõi game (cấp "hệ thống")
+├── othello/                       # lõi game
 │   ├── __init__.py
-│   ├── game.py                # reset, legal_actions, step, is_terminal, result, render, clone/undo
-│   ├── rules.py               # lật quân, pass, kết thúc ván
-│   └── encoding.py            # biến state thành tensor cho NN (kênh quân mình/đối thủ/lượt đi)
+│   ├── encoding.py                # [xong] hằng số (EMPTY/BLACK/WHITE), 8 hướng, bàn đầu,
+│   │                              #        action <-> chỉ số 0..63, encode_planes() cho NN (2 kênh: quân mình/đối thủ)
+│   ├── rules.py                   # [xong] hàm thuần: flips_for_move, legal_moves, apply_move (trả board MỚI)
+│   └── game.py                    # [xong] OthelloGame: reset, legal_actions, step, is_terminal, result,
+│                                  #        render, clone, score; tự xử lý pass và kết thúc ván
 │
 ├── agents/
-│   ├── base.py                # lớp Agent chung: select_action(game, time_budget)
-│   ├── random_agent.py        # cấp 1
-│   ├── heuristic_agent.py     # cấp 2: góc, X/C-squares, mobility, thứ tự ưu tiên luật
-│   ├── alphabeta_agent.py     # cấp 3: có cờ bật/tắt cắt tỉa, đếm số nút
-│   ├── mcts_agent.py          # cấp 4: UCT, tham số số mô phỏng
-│   ├── nn_agent.py            # cấp 5: policy/value từ supervised
-│   ├── rl_agent.py            # cấp 6: self-play
-│   └── az_inspired/           # cấp 7–8 (chỉ làm sau khi xong phần bắt buộc)
-│       ├── network.py
-│       ├── puct_mcts.py
-│       └── selfplay_loop.py
+│   ├── base.py                    # [xong] lớp Agent: select_action(game, time_budget), reset(), stats()
+│   ├── random_agent.py            # [xong] cấp 1, có seed riêng
+│   ├── heuristic_agent.py         # [stub] cấp 2: góc, X/C-squares, mobility, thứ tự ưu tiên luật
+│   ├── alphabeta_agent.py         # [stub] cấp 3: có cờ bật/tắt cắt tỉa, đếm số nút
+│   ├── mcts_agent.py              # [stub] cấp 4: UCT, tham số số mô phỏng
+│   ├── nn_agent.py                # [stub] cấp 5: policy/value từ supervised
+│   ├── rl_agent.py                # [stub] cấp 6: self-play
+│   └── az_inspired/               # cấp 7-8 (chỉ làm sau khi xong phần bắt buộc)
+│       ├── network.py             # [stub]
+│       ├── puct_mcts.py           # [stub]
+│       └── selfplay_loop.py       # [stub]
 │
 ├── models/
-│   └── nets.py                # kiến trúc mạng (dùng chung cho cấp 5–8)
+│   └── nets.py                    # [stub] kiến trúc mạng (dùng chung cho cấp 5-8)
 │
 ├── train/
-│   ├── generate_data.py       # sinh ván từ expert/self-play, loại trùng, lưu theo ván
-│   ├── train_supervised.py    # chia train/val/test THEO VÁN, lưu checkpoint + seed
-│   └── train_rl.py            # lưu learning curve
+│   ├── generate_data.py           # [stub] sinh ván từ expert/self-play, loại trùng, lưu theo ván
+│   ├── train_supervised.py        # [stub] chia train/val/test THEO VÁN, lưu checkpoint + seed
+│   └── train_rl.py                # [stub] lưu learning curve
 │
 ├── eval/
-│   ├── tournament.py          # round-robin, chia đều đi trước/sau, nhiều seed
-│   ├── ablations.py           # AB bật/tắt cắt tỉa, MCTS đổi số mô phỏng, heuristic bật/tắt
-│   ├── metrics.py             # win/draw/loss, score, p95 latency, Wilson CI
-│   └── profile_cost.py        # thời gian/nước, số nút, số mô phỏng, RAM
+│   ├── tournament.py              # [stub] round-robin, chia đều đi trước/sau, nhiều seed, ghi log
+│   ├── ablations.py               # [stub] AB bật/tắt cắt tỉa, MCTS đổi số mô phỏng, heuristic bật/tắt
+│   ├── metrics.py                 # [stub] win/draw/loss, score, p95 latency, Wilson CI
+│   └── profile_cost.py            # [stub] thời gian/nước, số nút, số mô phỏng, RAM
 │
 ├── ui/
-│   └── app.py                 # Pygame/Tkinter: người–máy, máy–máy, chọn cấp AI
+│   └── app.py                     # [stub] Pygame/Tkinter: người-máy, máy-máy, chọn cấp AI
 │
-├── tests/                     # pytest
-│   ├── test_game_rules.py     # lật quân, pass, kết thúc, hòa, nước sai
-│   ├── test_perft.py          # đếm nút so với dãy chuẩn 4, 12, 56, 244, 1396...
-│   ├── test_agents.py         # agent luôn trả nước hợp lệ
-│   └── test_metrics.py
+├── tests/                         # pytest
+│   ├── test_game_rules.py         # [xong] vị trí đầu, lật nhiều hướng, nước sai, pass, kết thúc, hòa, clone
+│   ├── test_perft.py              # [xong] đếm nút so với dãy chuẩn 4, 12, 56, 244, 1396, 8200 (độ sâu 7 = 55092 đánh dấu slow)
+│   ├── test_agents.py             # [xong] agent luôn trả nước hợp lệ, không sửa game, tái lập theo seed
+│   │                              #        (thêm agent mới: thêm 1 dòng vào AGENT_FACTORIES)
+│   └── test_metrics.py            # [stub]
 │
-├── scripts/                   # chạy lại toàn bộ thí nghiệm bằng 1 lệnh
-│   ├── run_tournament.sh
-│   ├── run_ablations.sh
-│   └── run_training.sh
+├── scripts/                       # chạy lại toàn bộ thí nghiệm bằng 1 lệnh
+│   ├── play_game.py               # [xong] chạy thử Random vs Random (1 ván có in bàn cờ, hoặc --games N thống kê)
+│   ├── run_tournament.sh          # [stub]
+│   ├── run_ablations.sh           # [stub]
+│   └── run_training.sh            # [stub]
 │
-├── notebooks/                 # tạo bảng/hình từ log thô (đề yêu cầu)
-│   ├── 01_tournament_results.ipynb
-│   ├── 02_ablations.ipynb
-│   └── 03_learning_curves.ipynb
+├── notebooks/                     # tạo bảng/hình từ log thô (đề yêu cầu)
+│   ├── 01_tournament_results.ipynb    # [stub, trống]
+│   ├── 02_ablations.ipynb             # [stub, trống]
+│   └── 03_learning_curves.ipynb       # [stub, trống]
 │
-├── checkpoints/               # weights (nếu dung lượng cho phép)
-├── data/                      # dữ liệu mẫu nhỏ; dữ liệu lớn ghi cách tái sinh trong README
+├── checkpoints/                   # weights (nếu dung lượng cho phép)
+├── data/                          # dữ liệu mẫu nhỏ; dữ liệu lớn ghi cách tái sinh trong README
 ├── results/
-│   ├── logs/                  # log thô từng ván (JSON/CSV), KHÔNG chỉnh tay
+│   ├── logs/                      # log thô từng ván (JSON/CSV), KHÔNG chỉnh tay
 │   └── figures/
 │
 └── docs/
-    ├── report/                # báo cáo 5 chương
+    ├── report/                    # báo cáo 5 chương
     ├── slides/
     └── poster/
