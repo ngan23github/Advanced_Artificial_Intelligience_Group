@@ -43,7 +43,8 @@ Các thành phần khác:
 | Thành phần | File | Trạng thái |
 |---|---|---|
 | Engine (luật, pass, kết thúc, clone) | `othello/` | xong (có test và perft) |
-| Giải đấu, độ đo, ablation | `eval/` | chưa làm |
+| Giải đấu round-robin, độ đo (`tournament.py`, `metrics.py`) | `eval/` | xong (có test) |
+| Ablation, profile chi phí | `eval/ablations.py`, `profile_cost.py` | chưa làm |
 | Giao diện demo | `ui/app.py` | chưa làm |
 
 (Cập nhật cột trạng thái khi làm xong.)
@@ -88,6 +89,10 @@ python -m pytest                       # test nhanh, gồm perft độ sâu 1-6 
 python -m pytest -m slow               # perft độ sâu 7 (khoảng 13 giây)
 python scripts/play_game.py            # 1 ván Random vs Random, in bàn cờ
 python scripts/play_game.py --games 1000 --seed 0   # 1000 ván, thống kê thắng/thua/hòa
+
+# giải đấu (hiện chạy được với Random vs Random_b để thử khung)
+python -m eval.tournament --config configs/tournament.yaml --games 20 --run-name smoke
+# kết quả: results/logs/smoke/ (games.jsonl, summary.json, matrix_<mode>.csv, meta.json...)
 ```
 
 ### Kế hoạch (chưa chạy được, sẽ chỉnh lại cho khớp khi code xong)
@@ -98,8 +103,7 @@ python -m train.generate_data --config configs/train_supervised.yaml
 python -m train.train_supervised --config configs/train_supervised.yaml
 python -m train.train_rl --config configs/train_rl.yaml
 
-# giải đấu round-robin và ablation
-python -m eval.tournament --config configs/tournament.yaml
+# ablation
 python -m eval.ablations --config configs/tournament.yaml
 
 # demo chơi người-máy / máy-máy
