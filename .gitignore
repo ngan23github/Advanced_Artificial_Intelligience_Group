@@ -17,5 +17,5 @@ checkpoints/*
 *.pth
 
 # Log thô: giữ lại .gitkeep, log lớn thì nén rồi nộp riêng
-results/logs/*.tmp
+results/logs/*
 *.zip

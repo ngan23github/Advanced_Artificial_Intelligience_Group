@@ -76,7 +76,7 @@ Yêu cầu: Python 3.10 trở lên.
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
+source .venv/Scripts/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
@@ -95,7 +95,7 @@ python -m eval.tournament --config configs/tournament.yaml --games 20 --run-name
 # kết quả: results/logs/smoke/ (games.jsonl, summary.json, matrix_<mode>.csv, meta.json...)
 ```
 
-### Kế hoạch (chưa chạy được, sẽ chỉnh lại cho khớp khi code xong)
+<!-- ### Kế hoạch (chưa chạy được, sẽ chỉnh lại cho khớp khi code xong)
 
 ```bash
 # sinh dữ liệu và train agent học được
@@ -108,7 +108,7 @@ python -m eval.ablations --config configs/tournament.yaml
 
 # demo chơi người-máy / máy-máy
 python -m ui.app
-```
+``` -->
 
 ## 7. Tái lập thí nghiệm
 

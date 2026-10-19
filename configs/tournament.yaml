@@ -1,30 +1,53 @@
 # Giải đấu round-robin. Theo đề: tối thiểu 100 ván/cặp (khuyến nghị 200),
 # chia đều đi trước / đi sau, nhiều seed, báo cáo ít nhất 2 chế độ ngân sách.
-games_per_pair: 200
-swap_sides: true             # một nửa số ván đổi bên đi trước
-seeds: [0, 1, 2]
-agents: [random, heuristic, alphabeta, mcts, nn, rl]
+# Chạy: python -m eval.tournament --config configs/tournament.yaml
+# Kết quả ghi vào <output_dir>/<run_name>/ (phải chưa tồn tại hoặc rỗng, để không ghi đè log thô).
 
-budget_modes:
-  - name: time_per_move      # cùng thời gian suy nghĩ mỗi nước
-    time_ms: 500
-  - name: default_config     # cấu hình mặc định minh bạch (xem configs/agents.yaml)
-    time_ms: null
+run_name: round_robin_v1       # đổi tên cho mỗi lần chạy chính thức (bỏ trống thì dùng run_<ngày_giờ>)
+agents_config: configs/agents.yaml
 
+games_per_pair: 200            # tổng số ván MỖI CẶP, MỖI CHẾ ĐỘ NGÂN SÁCH. Phải chẵn
+swap_sides: true               # đề bắt buộc chia đều đi trước/sau: hiện chỉ hỗ trợ true
+                               # (mỗi cặp ván = 2 ván CÙNG khai cuộc, đổi màu)
+seeds: [0, 1, 2]               # số cặp ván được chia đều cho các seed
+opening_plies: 4               # số nước đầu chọn ngẫu nhiên (có seed) để các ván không trùng nhau;
+                               # cần thiết vì agent tất định (Alpha-Beta) đấu nhau sẽ lặp đúng 1 ván
+workers: 1                     # số tiến trình song song; với agent tính theo thời gian để <= số lõi vật lý - 1
+
+# TẠM THỜI chỉ 2 agent chạy được (heuristic/alphabeta/mcts/nn/rl còn là stub, đưa vào đây sẽ lỗi ImportError).
+# Khi agent code xong, đổi thành danh sách đầy đủ:
+#   agents: [random, heuristic, alphabeta, mcts, nn, rl]
+# (eval/tournament.py CHƯA có cờ --agents; muốn thử nhanh thì sửa dòng dưới)
+agents: [random, random_b]
+
+# Mỗi chế độ chạy lại TOÀN BỘ giải đấu với ngân sách khác nhau. (code đọc khóa `modes`, KHÔNG phải `budget_modes`)
+# time_budget: GIÂY/nước, truyền thẳng vào agent.select_action (API.md). null = cấu hình mặc định của agent.
+#   (code KHÔNG tự đổi ms -> giây, nên ở đây ghi luôn bằng giây: 0.5 = 500 ms)
+# per_agent (tùy chọn): ghi đè theo tên agent, đơn vị giây, ví dụ {mcts: 0.5}.
+modes:
+  - name: time_per_move        # cùng thời gian suy nghĩ mỗi nước
+    time_budget: 0.5
+  - name: default_config       # cấu hình mặc định minh bạch (xem configs/agents.yaml)
+    time_budget: null
+
+# --- Các khóa dưới đây là tài liệu hóa phạm vi báo cáo ---
+# metrics: hiện giải đấu tính sẵn tất cả TRỪ `memory` (chưa làm; sẽ làm ở eval/profile_cost.py).
 metrics:
   - win_draw_loss
-  - score                    # (thắng + 0.5 * hòa) / tổng số ván
+  - score                      # (thắng + 0.5 * hòa) / tổng số ván
   - avg_time_per_move
   - latency_p95
-  - nodes_or_simulations
-  - memory
-confidence_interval: wilson  # khoảng tin cậy Wilson
+  - nodes_or_simulations       # lấy từ agent.stats(), khóa "nodes" / "simulations"
+  - memory                     # TODO: chưa có code
+confidence_interval: wilson    # summary.json ghi Wilson (win_rate_ci, score_ci) và thêm bootstrap cho score
 
+# ablations: CHƯA có code đọc khóa này (eval/ablations.py còn là stub); là danh sách việc cần làm.
+# Biến thể agent dùng cho ablation khai báo trong agents.yaml (có ví dụ bị comment).
 ablations:
   - alphabeta_pruning_on_off
-  - mcts_num_simulations     # ví dụ 100, 500, 1000, 5000
+  - mcts_num_simulations       # ví dụ 100, 500, 1000, 5000
   - heuristic_components_on_off
 
-output:
-  log_dir: results/logs/
-  figure_dir: results/figures/
+# code đọc khóa phẳng `output_dir` (log ghi vào <output_dir>/<run_name>/); cờ --out ghi đè.
+output_dir: results/logs/
+figure_dir: results/figures/    # dùng bởi notebooks/, chưa có code ghi vào

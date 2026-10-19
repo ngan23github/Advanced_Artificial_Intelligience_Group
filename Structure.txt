@@ -1,22 +1,21 @@
 Advanced_Artificial_Intelligience_Group/
-├── README.md                      # [xong] giới thiệu, luật, cài đặt, cách chạy, trạng thái
-├── API.md                         # [xong] quy ước board/action/pass + chữ ký hàm game và agent (cả nhóm phải giữ)
-├── Structure.txt                  # file này
-├── requirements.txt               # [xong] numpy, pyyaml, pytest (thêm torch/pygame/matplotlib khi cần, ghi rõ phiên bản)
-├── pytest.ini                     # [xong] mặc định bỏ test chậm; chạy test chậm bằng `pytest -m slow`
-├── CONTRIBUTIONS.md               # [xong, còn TODO] phân công + tỷ lệ đóng góp từng thành viên
-├── CREDITS.md                     # [xong, còn TODO] phần tự cài đặt vs kế thừa/tham khảo/AI
+├── README.md                      # giới thiệu, luật, cài đặt, cách chạy, trạng thái
+├── API.md                         # quy ước board/action/pass + chữ ký hàm game và agent (cả nhóm phải giữ)
+├── Structure.txt                  
+├── requirements.txt               # numpy, pyyaml, pytest (thêm torch/pygame/matplotlib khi cần, ghi rõ phiên bản)
+├── pytest.ini                     # mặc định bỏ test chậm; chạy test chậm bằng `pytest -m slow`
+├── CONTRIBUTIONS.md               # phân công + tỷ lệ đóng góp từng thành viên
+├── CREDITS.md                     # phần tự cài đặt vs kế thừa/tham khảo/AI
 ├── .gitignore
 │
 ├── configs/                       # mọi tham số thí nghiệm nằm ở đây, không hard-code
-│   ├── game.yaml                  # [chép] cỡ bàn (hiện cố định 8x8), luật pass
-│   ├── agents.yaml                # [chép] cấu hình mặc định từng agent
-│   ├── train_supervised.yaml      # [chép] siêu tham số NN, tỷ lệ chia train/val/test
-│   ├── train_rl.yaml              # [chép] reward, số episode, exploration...
-│   └── tournament.yaml            # [chép] số ván/cặp, seed, ngân sách thời gian/mô phỏng
+│   ├── game.yaml                  # cỡ bàn (hiện cố định 8x8), luật pass
+│   ├── agents.yaml                # cấu hình mặc định từng agent
+│   ├── train_supervised.yaml      # siêu tham số NN, tỷ lệ chia train/val/test
+│   ├── train_rl.yaml              # reward, số episode, exploration...
+│   └── tournament.yaml            # số ván/cặp, seed, ngân sách thời gian/mô phỏng
 │
-├── othello/                       # lõi game
-│   ├── __init__.py
+├── othello/                       # cốt lõi game
 │   ├── encoding.py                # [xong] hằng số (EMPTY/BLACK/WHITE), 8 hướng, bàn đầu,
 │   │                              #        action <-> chỉ số 0..63, encode_planes() cho NN (2 kênh: quân mình/đối thủ)
 │   ├── rules.py                   # [xong] hàm thuần: flips_for_move, legal_moves, apply_move (trả board MỚI)

@@ -1,31 +1,76 @@
 # Cấu hình mặc định của từng tác tử. Giá trị dưới đây chỉ là điểm xuất phát,
 # chỉnh lại sau khi thử nghiệm (chọn trên tập tune, không dùng ván đánh giá cuối).
-random:
-  seed: 0
+#
+# CÁCH ĐỌC FILE NÀY (xem agents/registry.py -> build_agent):
+# - Mỗi mục cấp 1 là MỘT agent; tên mục là tên dùng trong log, ma trận kết quả và danh sách `agents` của tournament.yaml.
+# - `type` (BẮT BUỘC): khóa trong AGENT_CLASSES của registry: random | heuristic | alphabeta | mcts | nn | rl.
+#   Dùng nhiều mục cùng `type` khác `params` để tạo biến thể cho ablation.
+# - `params`: dict các tham số của __init__ của lớp agent tương ứng (người làm agent phải đặt đúng tên tham số).
+#   Registry chỉ đọc `type` và `params`; khóa nào để ngoài `params` sẽ BỊ BỎ QUA.
+# - KHÔNG ghi `seed` trong `params` cho giải đấu: registry chỉ điền seed của từng ván khi params chưa có seed
+#   (setdefault). Ghi cứng seed ở đây sẽ làm MỌI ván dùng cùng một seed. Khi chạy UI/demo thì tự truyền seed.
+# - Agent chưa có code vẫn được khai báo ở đây; chỉ lỗi khi bạn đưa nó vào danh sách `agents` của giải đấu.
 
-heuristic:
-  # thứ tự ưu tiên luật, ghi rõ trong báo cáo cả trường hợp xung đột luật
-  priorities: [take_corner, avoid_x_square, avoid_c_square, maximize_mobility, maximize_discs]
+agents:
+  random:
+    type: random
+    params: {}
 
-alphabeta:
-  depth: 4
-  pruning: true            # false = Minimax thuần, dùng cho ablation
-  move_ordering: true
-  eval:
-    disc_diff: true
-    mobility: true
-    corners: true
-    x_c_squares: true
-    stability: false
+  # Bản Random thứ hai, CHỈ để chạy thử khung giải đấu khi chưa có agent thật. Xóa khi đã có agent khác.
+  random_b:
+    type: random
+    params: {}
 
-mcts:
-  simulations: 1000
-  exploration_c: 1.414     # hằng số UCT
-  rollout_policy: random
-  seed: 0
+  heuristic:
+    type: heuristic
+    params:
+      # thứ tự ưu tiên luật, ghi rõ trong báo cáo cả trường hợp xung đột luật
+      priorities: [take_corner, avoid_x_square, avoid_c_square, maximize_mobility, maximize_discs]
 
-nn:
-  checkpoint: checkpoints/nn_supervised.pt
+  alphabeta:
+    type: alphabeta
+    params:
+      depth: 4
+      pruning: true            # false = Minimax thuần, dùng cho ablation
+      move_ordering: true
+      eval:
+        disc_diff: true
+        mobility: true
+        corners: true
+        x_c_squares: true
+        stability: false
 
-rl:
-  checkpoint: checkpoints/rl_selfplay.pt
+  mcts:
+    type: mcts
+    params:
+      simulations: 1000
+      exploration_c: 1.414     # hằng số UCT
+      rollout_policy: random
+
+  nn:
+    type: nn
+    params:
+      checkpoint: checkpoints/nn_supervised.pt     # phải trùng output của train_supervised.yaml
+
+  rl:
+    type: rl
+    params:
+      checkpoint: checkpoints/rl_selfplay.pt       # phải trùng output của train_rl.yaml
+
+# ---- Biến thể cho ablation (bỏ dấu # khi agent tương ứng đã code xong) ----
+# alphabeta_nopruning:                         # ablation 1: bật/tắt cắt tỉa => phải cho CÙNG nước đi, khác số nút
+#   type: alphabeta
+#   params: {depth: 4, pruning: false}
+# mcts_100:                                    # ablation 2: số mô phỏng
+#   type: mcts
+#   params: {simulations: 100}
+# mcts_5000:
+#   type: mcts
+#   params: {simulations: 5000}
+# alphabeta_discs_only:                        # ablation 3: hàm đánh giá chỉ đếm quân
+#   type: alphabeta
+#   params:
+#     eval: {disc_diff: true, mobility: false, corners: false, x_c_squares: false, stability: false}
+# heuristic_discs_only:                        # ablation 4: heuristic chỉ đếm quân (bỏ góc/X/C/mobility)
+#   type: heuristic
+#   params: {priorities: [maximize_discs]}

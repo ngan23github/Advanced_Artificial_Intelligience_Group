@@ -21,7 +21,8 @@ def play_one(black_agent, white_agent, verbose=False):
     black_agent.reset()
     white_agent.reset()
     agents = {BLACK: black_agent, WHITE: white_agent}
-    print(game.render(), "\n")
+    if verbose:
+        print(game.render(), "\n")
     while not game.is_terminal():
         action = agents[game.current_player].select_action(game)
         game.step(action)

@@ -1,10 +1,12 @@
 # Cấu hình game. Cố định trước khi chạy giải đấu chính thức.
+# LƯU Ý: engine (othello/) hiện cài cứng các luật này, KHÔNG đọc file này khi chạy.
+# tests/test_configs.py kiểm tra file này khớp với engine; nếu đổi luật ở đây mà không sửa engine, test sẽ đỏ.
 game: othello
 version: "1.0"
 board_size: 8            # bàn chính: 8x8 chuẩn
 first_player: black      # Đen đi trước
 pass_rule: forced_pass   # không có nước hợp lệ thì phải pass
-terminal_rule: two_consecutive_passes
+terminal_rule: two_consecutive_passes   # cả hai bên đều không đi được thì hết ván
 result_rule: disc_count  # nhiều quân hơn thắng, bằng nhau hòa
 reward:
   win: 1.0

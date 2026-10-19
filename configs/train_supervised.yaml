@@ -1,14 +1,19 @@
 # Huấn luyện NN (cấp 5). Điền cho đủ thông tin theo mục 3.4 của đề.
+# Phần việc của Người 3. Các khóa đánh dấu (MỚI) do tui thêm để khớp với khung hiện có; Người 3 chốt hoặc bỏ.
 seed: 42
 data:
   source: expert_selfplay      # nguồn nhãn: ghi rõ agent nào sinh ván (nguy cơ học lại heuristic)
-  expert_agent: alphabeta
+  expert_agent: alphabeta      # (đổi) phải là TÊN MỤC trong configs/agents.yaml; sinh ván bằng agents.registry.build_agent
   num_games: 5000              # TODO: chốt sau khi thử
+  opening_plies: 8             # (MỚI) số nước đầu chọn ngẫu nhiên: expert tất định mà không có cái này thì 5000 ván gần như
+                               # trùng nhau và `dedupe` sẽ xóa gần hết. Hãy thử tăng nếu số ván sau dedupe quá thấp
   dedupe: true
   split_by_game: true          # chia THEO VÁN, không chia theo từng nước
-  split: {train: 0.8, val: 0.1, test: 0.1}
+  split: {train: 0.8, val: 0.1, test: 0.1}   # tổng phải = 1 (có test kiểm tra)
 model:
   type: policy_value           # policy, value hoặc cả hai
+  input_planes: 2              # (MỚI) khớp othello.encoding.encode_planes: 2 kênh (quân mình, quân đối thủ), 8x8
+  policy_outputs: 64           # (MỚI) khớp action_to_index: 64 ô; nước không hợp lệ phải bị che khi chọn nước
   hidden: 128                  # TODO: chốt kiến trúc
 train:
   epochs: 30
@@ -17,4 +22,5 @@ train:
   optimizer: adam
 output:
   checkpoint_dir: checkpoints/
-  log_dir: results/logs/
+  checkpoint_name: nn_supervised.pt   # (MỚI) checkpoint_dir + checkpoint_name phải trùng nn.checkpoint trong agents.yaml
+  log_dir: results/logs/train_supervised/
