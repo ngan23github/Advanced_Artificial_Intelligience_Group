@@ -19,4 +19,5 @@ pygame>=2.5
 # Test
 pytest>=7.4
 
+pygame
 # Khi chốt xong, chạy `pip freeze` để ghi lại phiên bản chính xác đã dùng.
