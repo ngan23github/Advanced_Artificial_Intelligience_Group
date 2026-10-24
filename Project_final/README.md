@@ -10,12 +10,9 @@ Nhóm: 10 (3 thành viên, xem `CONTRIBUTIONS.md`).
 Nhóm tự xây engine Othello 8x8 chuẩn, rồi cài nhiều tác tử AI từ đơn giản đến phức tạp, cho đấu với nhau và phân tích kết quả để trả lời câu hỏi nghiên cứu.
 
 **Câu hỏi nghiên cứu**:
-1. MCTS có thắng Alpha-Beta khi hai bên có cùng thời gian suy nghĩ mỗi nước
-không? Kết quả có đổi khi đổi ngân sách thời gian hay không?
-2. Hàm đánh giá có góc và mobility có mạnh hơn hàm chỉ đếm quân không, và mạnh
-hơn bao nhiêu?
-3. Self-play RL có cải thiện tác tử học được so với mô hình bắt chước Alpha-Beta
-(supervised) không?
+1. MCTS có thắng Alpha-Beta khi hai bên có cùng thời gian suy nghĩ mỗi nước không? Kết quả có đổi khi đổi ngân sách thời gian hay không?
+2. Hàm đánh giá có góc và mobility có mạnh hơn hàm chỉ đếm quân không, và mạnh hơn bao nhiêu?
+3. Self-play RL có cải thiện tác tử học được so với mô hình bắt chước Alpha-Beta (supervised) không?
 
 ## 2. Luật chơi áp dụng
 

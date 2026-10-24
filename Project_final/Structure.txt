@@ -29,14 +29,10 @@ Advanced_Artificial_Intelligience_Group/
 │   ├── alphabeta_agent.py         # [stub] cấp 3: có cờ bật/tắt cắt tỉa, đếm số nút
 │   ├── mcts_agent.py              # [stub] cấp 4: UCT, tham số số mô phỏng
 │   ├── nn_agent.py                # [stub] cấp 5: policy/value từ supervised
-│   ├── rl_agent.py                # [stub] cấp 6: self-play
-│   └── az_inspired/               # cấp 7-8 (chỉ làm sau khi xong phần bắt buộc)
-│       ├── network.py             # [stub]
-│       ├── puct_mcts.py           # [stub]
-│       └── selfplay_loop.py       # [stub]
+│   └── rl_agent.py                # [stub] cấp 6: self-play
 │
 ├── models/
-│   └── nets.py                    # [stub] kiến trúc mạng (dùng chung cho cấp 5-8)
+│   └── nets.py                    # [stub] kiến trúc mạng (dùng chung cho cấp 5-6)
 │
 ├── train/
 │   ├── generate_data.py           # [stub] sinh ván từ expert/self-play, loại trùng, lưu theo ván
