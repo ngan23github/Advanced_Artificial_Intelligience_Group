@@ -21,8 +21,6 @@ Phạm vi nhóm chọn: bắt buộc cấp 1-4 + cấp 5 và 6 (khuyến khích)
 
 Điểm 6 (kết quả, thảo luận) và 7 (báo cáo, slide, demo) là việc chung, xem mục 5.
 
-Lưu ý công bằng: Người 1 đã làm xong engine + tournament nên đã đóng góp nhiều. Phần còn lại của Người 1 (UI, ablation, profile, notebook, đóng gói) vẫn nhẹ hơn Người 2 và 3 về code thuật toán. Tỷ lệ cuối cùng nên dựa vào lịch sử commit thật, đừng chia cứng 33/33/33 từ bây giờ.
-
 ## 2. Quy tắc chung (cả nhóm)
 
 1. Giữ nguyên `API.md` (board, action `(row, col)`, tên lớp agent, `select_action(game, time_budget)`, `stats()`). Muốn đổi thì báo cả nhóm.
@@ -35,11 +33,11 @@ Lưu ý công bằng: Người 1 đã làm xong engine + tournament nên đã đ
 6. Không đưa vào báo cáo kết quả chưa chạy. Mọi hình/bảng phải sinh từ notebook đọc log thô.
 7. Ghi `CREDITS.md`: phần tự cài đặt, phần tham khảo (sách Mark Liu, repo, công cụ AI) cho từng file mình làm.
 
-## 3. Câu hỏi nghiên cứu đề xuất (chốt ngày đầu, ghi vào README)
+## 3. Câu hỏi nghiên cứu
 
-1. MCTS có thắng Alpha-Beta khi cùng thời gian suy nghĩ mỗi nước không? (chế độ `time_per_move`)
-2. Hàm đánh giá có góc/mobility có mạnh hơn hàm chỉ đếm quân không? (ablation Alpha-Beta và Heuristic)
-3. Self-play RL có cải thiện so với mô hình bắt chước Alpha-Beta (NN supervised) không?
+1. MCTS có thắng Alpha-Beta khi hai bên có cùng thời gian suy nghĩ mỗi nước không? Kết quả có đổi khi đổi ngân sách thời gian hay không?
+2. Hàm đánh giá có góc và mobility có mạnh hơn hàm chỉ đếm quân không, và mạnh hơn bao nhiêu?
+3. Self-play RL có cải thiện tác tử học được so với mô hình bắt chước Alpha-Beta (supervised) không?
 
 Hai ablation bắt buộc sẽ lấy từ đây: Alpha-Beta bật/tắt cắt tỉa và số mô phỏng MCTS (thêm hàm đánh giá/heuristic bật-tắt làm ablation thứ ba, và policy-only vs policy+MCTS nếu làm cấp 7).
 
