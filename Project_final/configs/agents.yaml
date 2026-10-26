@@ -3,7 +3,7 @@
 #
 # CÁCH ĐỌC FILE NÀY (xem agents/registry.py -> build_agent):
 # - Mỗi mục cấp 1 là MỘT agent; tên mục là tên dùng trong log, ma trận kết quả và danh sách `agents` của tournament.yaml.
-# - `type` (BẮT BUỘC): khóa trong AGENT_CLASSES của registry: random | heuristic | alphabeta | mcts | nn | rl.
+# - `type` (BẮT BUỘC): khóa trong AGENT_CLASSES của registry: random | heuristic | alphabeta | mcts | nn | rl | temp_positional.
 #   Dùng nhiều mục cùng `type` khác `params` để tạo biến thể cho ablation.
 # - `params`: dict các tham số của __init__ của lớp agent tương ứng (người làm agent phải đặt đúng tên tham số).
 #   Registry chỉ đọc `type` và `params`; khóa nào để ngoài `params` sẽ BỊ BỎ QUA.
@@ -13,11 +13,6 @@
 
 agents:
   random:
-    type: random
-    params: {}
-
-  # Bản Random thứ hai, CHỈ để chạy thử khung giải đấu khi chưa có agent thật. Xóa khi đã có agent khác.
-  random_b:
     type: random
     params: {}
 
@@ -46,6 +41,12 @@ agents:
       simulations: 1000
       exploration_c: 1.414     # hằng số UCT
       rollout_policy: random
+
+  # Expert TẠM của Người 3 (greedy theo bảng điểm vị trí): thầy gắn nhãn cho NN và đối thủ cố định khi train RL.
+  # Không đưa vào giải đấu chính thức. Xóa khi không còn dùng.
+  temp_positional:
+    type: temp_positional
+    params: {}
 
   nn:
     type: nn

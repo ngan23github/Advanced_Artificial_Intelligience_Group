@@ -1,23 +1,20 @@
-# Lõi
+# Core
 numpy>=1.24
-pyyaml>=6.0
+PyYAML>=6.0
 tqdm>=4.65
 
-# Học máy (cấp 5-8)
+# Machine learning
 torch>=2.0
 
-# Thống kê, bảng, hình
+# Statistics and visualization
 pandas>=2.0
 scipy>=1.10
-statsmodels>=0.14      # khoảng tin cậy Wilson (proportion_confint)
+statsmodels>=0.14
 matplotlib>=3.7
 jupyter>=1.0
 
-# Giao diện demo
+# Demo interface
 pygame>=2.5
 
-# Test
+# Testing
 pytest>=7.4
-
-pygame
-# Khi chốt xong, chạy `pip freeze` để ghi lại phiên bản chính xác đã dùng.

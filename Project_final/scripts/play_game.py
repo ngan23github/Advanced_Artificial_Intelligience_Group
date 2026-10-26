@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from othello.encoding import BLACK, WHITE
 from othello.game import OthelloGame
-from ui.agent_factory import AGENT_TYPES, make_agent
+from agents.registry import build_agent_by_name, load_agent_specs
 
 
 def play_one(black_agent, white_agent, verbose=False):
@@ -29,8 +29,8 @@ def play_one(black_agent, white_agent, verbose=False):
 
 
 def run_cli(args):
-    a = make_agent(args.black, args.seed)
-    b = make_agent(args.white, None if args.seed is None else args.seed + 1)
+    a = build_agent_by_name(args.black, args.seed)
+    b = build_agent_by_name(args.white, None if args.seed is None else args.seed + 1)
     if args.games == 1:
         res, n, bl, wh = play_one(a, b, verbose=True)
         print(f"Kết quả (góc nhìn Đen): {res}, {n} nước, Đen {bl} - Trắng {wh}")
@@ -49,8 +49,8 @@ def main():
     p.add_argument("--cli", action="store_true", help="chạy không giao diện")
     p.add_argument("--games", type=int, default=1)
     p.add_argument("--seed", type=int, default=None)
-    p.add_argument("--black", default="random", choices=list(AGENT_TYPES), help="(chỉ --cli)")
-    p.add_argument("--white", default="random", choices=list(AGENT_TYPES), help="(chỉ --cli)")
+    p.add_argument("--black", default="random", choices=list(load_agent_specs()), help="(chỉ --cli) tên mục trong configs/agents.yaml")
+    p.add_argument("--white", default="random", choices=list(load_agent_specs()), help="(chỉ --cli) tên mục trong configs/agents.yaml")
     args = p.parse_args()
 
     if args.cli:

@@ -28,16 +28,13 @@ Advanced_Artificial_Intelligience_Group/
 │   ├── heuristic_agent.py         # [stub] cấp 2: góc, X/C-squares, mobility, thứ tự ưu tiên luật
 │   ├── alphabeta_agent.py         # [stub] cấp 3: có cờ bật/tắt cắt tỉa, đếm số nút
 │   ├── mcts_agent.py              # [stub] cấp 4: UCT, tham số số mô phỏng
-│   ├── nn_agent.py                # [stub] cấp 5: policy/value từ supervised
-│   └── rl_agent.py                # [stub] cấp 6: self-play
+│   ├── nn_agent.py                # [xong] cấp 5: nạp checkpoint, che nước sai, argmax/lấy mẫu
+│   ├── rl_agent.py                # [xong] cấp 6: dùng chung mã suy luận với NNAgent, khác checkpoint
+│   ├── temp_positional_agent.py   # [xong] expert TẠM (bảng điểm vị trí) để gắn nhãn/đối thủ khi Alpha-Beta chưa có
+│   └── registry.py                # [xong] NGUỒN DUY NHẤT tạo agent từ agents.yaml (giải đấu, UI, scripts, notebook)
 │
 ├── models/
-│   └── nets.py                    # [stub] kiến trúc mạng (dùng chung cho cấp 5-6)
-│
-├── train/
-│   ├── generate_data.py           # [stub] sinh ván từ expert/self-play, loại trùng, lưu theo ván
-│   ├── train_supervised.py        # [stub] chia train/val/test THEO VÁN, lưu checkpoint + seed
-│   └── train_rl.py                # [stub] lưu learning curve
+│   └── nets.py                    # [xong] PolicyValueNet, che nước sai, lưu/nạp checkpoint
 │
 ├── eval/
 │   ├── tournament.py              # [stub] round-robin, chia đều đi trước/sau, nhiều seed, ghi log
@@ -45,26 +42,38 @@ Advanced_Artificial_Intelligience_Group/
 │   ├── metrics.py                 # [stub] win/draw/loss, score, p95 latency, Wilson CI
 │   └── profile_cost.py            # [stub] thời gian/nước, số nút, số mô phỏng, RAM
 │
-├── ui/
-│   └── app.py                     # [stub] Pygame/Tkinter: người-máy, máy-máy, chọn cấp AI
+├── ui/                            # Pygame: người-máy, máy-máy; agent lấy từ agents.yaml qua registry
+│   ├── app.py                     # vòng lặp chính, chuyển màn hình
+│   ├── menu.py                    # màn hình menu
+│   ├── match.py                   # logic một ván + thread AI (không phụ thuộc pygame)
+│   ├── game_view.py               # vẽ bàn cờ, bảng điểm, nút
+│   ├── widgets.py                 # Button, Selector
+│   ├── draw_utils.py              # font, vẽ quân
+│   └── config.py                  # kích thước, màu, danh sách chế độ/thời gian
 │
 ├── tests/                         # pytest
 │   ├── test_game_rules.py         # [xong] vị trí đầu, lật nhiều hướng, nước sai, pass, kết thúc, hòa, clone
 │   ├── test_perft.py              # [xong] đếm nút so với dãy chuẩn 4, 12, 56, 244, 1396, 8200 (độ sâu 7 = 55092 đánh dấu slow)
 │   ├── test_agents.py             # [xong] agent luôn trả nước hợp lệ, không sửa game, tái lập theo seed
 │   │                              #        (thêm agent mới: thêm 1 dòng vào AGENT_FACTORIES)
+│   ├── test_nn_pipeline.py        # [xong] hàm trong notebook 04-06 + chạy thử cả 3 notebook (QUICK_TEST)
+│   ├── test_registry_ui.py        # [xong] registry hợp nhất, Match/Menu/App (Pygame không màn hình)
+│   ├── notebook_utils.py          # tiện ích chạy code notebook từ test
 │   └── test_metrics.py            # [stub]
 │
 ├── scripts/                       # chạy lại toàn bộ thí nghiệm bằng 1 lệnh
 │   ├── play_game.py               # [xong] chạy thử Random vs Random (1 ván có in bàn cờ, hoặc --games N thống kê)
 │   ├── run_tournament.sh          # [stub]
 │   ├── run_ablations.sh           # [stub]
-│   └── run_training.sh            # [stub]
+│   └── run_training.sh            # [xong] chạy tuần tự notebook 04-06 bằng nbconvert
 │
 ├── notebooks/                     # tạo bảng/hình từ log thô (đề yêu cầu)
 │   ├── 01_tournament_results.ipynb    # [stub, trống]
 │   ├── 02_ablations.ipynb             # [stub, trống]
-│   └── 03_learning_curves.ipynb       # [stub, trống]
+│   ├── 03_learning_curves.ipynb       # [xong] hình từ log của notebook 05 và 06
+│   ├── 04_generate_data.ipynb         # [xong] sinh dữ liệu expert, dedupe, chia theo ván
+│   ├── 05_train_supervised.ipynb      # [xong] train NN cấp 5
+│   └── 06_train_rl.ipynb              # [xong] RL self-play cấp 6
 │
 ├── checkpoints/                   # weights (nếu dung lượng cho phép)
 ├── data/                          # dữ liệu mẫu nhỏ; dữ liệu lớn ghi cách tái sinh trong README
