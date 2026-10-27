@@ -20,8 +20,7 @@ agents:
     type: heuristic
     params:
       # thứ tự ưu tiên luật, ghi rõ trong báo cáo cả trường hợp xung đột luật
-      priorities: [take_corner, avoid_x_square, avoid_c_square, maximize_mobility, maximize_discs]
-
+      priorities: [win_now, take_corner, avoid_x_square, avoid_c_square, maximize_mobility, maximize_discs]
   alphabeta:
     type: alphabeta
     params:
