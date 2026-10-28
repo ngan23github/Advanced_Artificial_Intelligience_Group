@@ -19,8 +19,7 @@ agents:
   heuristic:
     type: heuristic
     params:
-      # thứ tự ưu tiên luật, ghi rõ trong báo cáo cả trường hợp xung đột luật
-      priorities: [take_corner, avoid_x_square, avoid_c_square, maximize_mobility, maximize_discs]
+      endgame_empties: 10
 
   alphabeta:
     type: alphabeta
@@ -42,21 +41,15 @@ agents:
       exploration_c: 1.414     # hằng số UCT
       rollout_policy: random
 
-  # Expert TẠM của Người 3 (greedy theo bảng điểm vị trí): thầy gắn nhãn cho NN và đối thủ cố định khi train RL.
-  # Không đưa vào giải đấu chính thức. Xóa khi không còn dùng.
-  temp_positional:
-    type: temp_positional
-    params: {}
-
   nn:
     type: nn
     params:
-      checkpoint: checkpoints/nn_supervised.pt     # phải trùng output của train_supervised.yaml
+      checkpoint: checkpoints/nn_supervised_heuristic.pt     # phải trùng output của train_supervised.yaml
 
   rl:
     type: rl
     params:
-      checkpoint: checkpoints/rl_selfplay.pt       # phải trùng output của train_rl.yaml
+      checkpoint: checkpoints/rl_selfplay_heuristic.pt       # phải trùng output của train_rl.yaml
 
 # ---- Biến thể cho ablation (bỏ dấu # khi agent tương ứng đã code xong) ----
 # alphabeta_nopruning:                         # ablation 1: bật/tắt cắt tỉa => phải cho CÙNG nước đi, khác số nút
