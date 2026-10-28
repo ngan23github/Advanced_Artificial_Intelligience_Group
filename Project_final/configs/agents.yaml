@@ -52,9 +52,9 @@ agents:
       checkpoint: checkpoints/rl_selfplay_heuristic.pt       # phải trùng output của train_rl.yaml
 
 # ---- Biến thể cho ablation (bỏ dấu # khi agent tương ứng đã code xong) ----
-# alphabeta_nopruning:                         # ablation 1: bật/tắt cắt tỉa => phải cho CÙNG nước đi, khác số nút
-#   type: alphabeta
-#   params: {depth: 4, pruning: false}
+alphabeta_nopruning:                         # ablation 1: bật/tắt cắt tỉa => phải cho CÙNG nước đi, khác số nút
+  type: alphabeta
+  params: {depth: 4, pruning: false}
 # mcts_100:                                    # ablation 2: số mô phỏng
 #   type: mcts
 #   params: {simulations: 100}

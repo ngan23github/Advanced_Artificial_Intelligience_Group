@@ -1,0 +1,27 @@
+
+# Dưới đây là các biến thể ablation: bỏ dấu # rồi dán vào `agents:` khi muốn chọn trong menu UI hoặc đưa vào giải đấu.
+# Tham số hợp lệ: depth, pruning, move_ordering, eval{disc_diff,mobility,corners,x_c_squares,stability}, weights{cùng khóa}, max_depth.
+# Chú ý: khi giải đấu truyền time_budget (giây/nước) thì agent lặp sâu theo thời gian và BỎ QUA `depth`.
+#
+# alphabeta_nopruning:                 # ablation 1: Minimax thuần, phải cho CÙNG nước đi, khác số nút/thời gian
+#   type: alphabeta
+#   params: {depth: 4, pruning: false}
+# alphabeta_noordering:                # ablation: Alpha-Beta không sắp xếp nước
+#   type: alphabeta
+#   params: {depth: 4, move_ordering: false}
+# alphabeta_discs_only:                # ablation 3: hàm đánh giá chỉ đếm quân
+#   type: alphabeta
+#   params:
+#     eval: {disc_diff: true, mobility: false, corners: false, x_c_squares: false, stability: false}
+# alphabeta_no_mobility:
+#   type: alphabeta
+#   params: {eval: {mobility: false}}
+# alphabeta_stability:
+#   type: alphabeta
+#   params: {eval: {stability: true}}
+# alphabeta_d2:                        # độ nhạy theo độ sâu
+#   type: alphabeta
+#   params: {depth: 2}
+# alphabeta_d6:
+#   type: alphabeta
+#   params: {depth: 6}
