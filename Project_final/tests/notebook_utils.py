@@ -21,9 +21,14 @@ def code_cells(name):
     return [(c.get("metadata", {}).get("tags", []), "".join(c["source"])) for c in nb["cells"] if c["cell_type"] == "code"]
 
 
-def run_notebook(name, quick=False, only_tags=None, namespace=None):
-    """Chạy tuần tự các ô code trong một namespace chung. only_tags=None: chạy mọi ô; ngược lại chỉ ô có tag thuộc tập này."""
+def run_notebook(name, quick=False, only_tags=None, namespace=None, replace=None):
+    """Chạy tuần tự các ô code trong một namespace chung. only_tags=None: chạy mọi ô; ngược lại chỉ ô có tag thuộc tập này.
+
+    replace: dict {đoạn mã cũ: đoạn mã mới} áp lên mã nguồn các ô trước khi chạy (vd đổi thư mục dữ liệu sang thư mục tạm).
+    Nếu một đoạn cũ không xuất hiện ở ô nào thì báo lỗi, để notebook đổi code mà test không âm thầm bỏ qua việc thay.
+    """
     ns = namespace if namespace is not None else {"__name__": "__notebook__"}
+    pending = set(replace or {})
     old = Path.cwd()
     os.chdir(ROOT)
     try:
@@ -31,9 +36,15 @@ def run_notebook(name, quick=False, only_tags=None, namespace=None):
             if only_tags is not None and not (set(tags) & set(only_tags)):
                 continue
             src = src.replace("QUICK_TEST = False", f"QUICK_TEST = {quick}")
+            for old_src, new_src in (replace or {}).items():
+                if old_src in src:
+                    src = src.replace(old_src, new_src)
+                    pending.discard(old_src)
             exec(compile(src, f"{name}[cell {i}]", "exec"), ns)
     finally:
         os.chdir(old)
+    if pending:
+        raise AssertionError(f"{name}: không tìm thấy đoạn mã cần thay: {sorted(pending)}")
     return ns
 
 

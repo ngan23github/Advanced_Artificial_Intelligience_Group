@@ -70,7 +70,7 @@ def play_match(m, timeout=60):
     return m
 
 
-@pytest.mark.parametrize("black,white", [("random"), ("nn", "rl")])
+@pytest.mark.parametrize("black,white", [("random", "random"), ("nn", "rl")])
 def test_match_agent_vs_agent_plays_full_game(monkeypatch, agents_cfg, black, white):
     from ui import match as M
     monkeypatch.setattr(M, "AGENT_DELAY", 0.0)

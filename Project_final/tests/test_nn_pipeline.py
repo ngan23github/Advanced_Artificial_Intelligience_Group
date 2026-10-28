@@ -6,6 +6,7 @@ Logic huấn luyện nằm trong notebook 04-06; ở đây:
 Không kiểm tra độ mạnh của agent, chỉ kiểm tra pipeline đúng.
 """
 
+import json
 import random
 
 import numpy as np
@@ -22,6 +23,7 @@ from othello.rules import legal_moves  # noqa: E402
 from notebook_utils import load_defs, run_notebook  # noqa: E402
 
 REWARD = {"win": 1.0, "draw": 0.0, "loss": -1.0}
+EXPERT = "heuristic"   # phải là mục có thật trong configs/agents.yaml (expert tạm `temp_positional` đã bị bỏ)
 
 
 def random_positions(n, seed=0):
@@ -88,12 +90,12 @@ def test_nn_agent_stats_and_greedy_is_deterministic(tmp_path):
 
 # ---------- notebook 04: sinh dữ liệu ----------
 def make_games(nb, n=12, opening_plies=6, eps=0.05):
-    return [nb["generate_one_game"](1000 + i, "temp_positional", opening_plies, eps) for i in range(n)]
+    return [nb["generate_one_game"](1000 + i, EXPERT, opening_plies, eps) for i in range(n)]
 
 
 def test_generate_one_game_is_reproducible_and_labels_valid(nb_data):
-    a = nb_data["generate_one_game"](5, "temp_positional", 6, 0.05)
-    b = nb_data["generate_one_game"](5, "temp_positional", 6, 0.05)
+    a = nb_data["generate_one_game"](5, EXPERT, 6, 0.05)
+    b = nb_data["generate_one_game"](5, EXPERT, 6, 0.05)
     assert a["moves"] == b["moves"]
     assert a["legal"][np.arange(len(a["action"])), a["action"]].all()    # nhãn luôn là nước hợp lệ
     assert set(np.unique(a["value"])) <= {-1.0, 0.0, 1.0}
@@ -175,8 +177,26 @@ def test_notebook_04_runs_end_to_end():
     assert ns["stats"]["games_after_dedupe"] <= ns["stats"]["games_before_dedupe"] == 40
 
 
-def test_notebook_05_runs_end_to_end():
-    ns = run_notebook("05_train_supervised.ipynb", quick=True)
+@pytest.fixture()
+def sample_data_dir(nb_data, tmp_path):
+    """Bộ dữ liệu mẫu nhỏ (20 ván) cùng định dạng notebook 04 ghi ra, để notebook 05 không phụ thuộc `data/sample/`
+    (thư mục đó bị .gitignore nên clone sạch sẽ không có)."""
+    games = make_games(nb_data, 20)
+    splits, kept, stats = nb_data["build_dataset"](games, {"train": 0.8, "val": 0.1, "test": 0.1}, seed=0)
+    out = tmp_path / "sample"
+    out.mkdir()
+    for name, arrays in splits.items():
+        np.savez_compressed(out / f"{name}.npz", **arrays)
+    meta = {"label_source": {"expert_agent": EXPERT, "is_temporary_expert": False, "note": "dữ liệu mẫu cho test"},
+            "games_per_split": stats["games_per_split"], "samples_per_split": stats["samples_per_split"]}
+    (out / "meta.json").write_text(json.dumps(meta), encoding="utf-8")
+    return out
+
+
+def test_notebook_05_runs_end_to_end(sample_data_dir):
+    # QUICK_TEST của notebook 05 trỏ vào REPO/"data"/"sample"; đổi sang dữ liệu mẫu tạm do test tự sinh.
+    ns = run_notebook("05_train_supervised.ipynb", quick=True,
+                      replace={'REPO / "data" / "sample"': f"Path({str(sample_data_dir)!r})"})
     assert len(ns["history"]) == 2 and ns["CKPT_PATH"].exists()
     assert (ns["LOG_DIR"] / "epochs.csv").exists() and (ns["LOG_DIR"] / "test_metrics.json").exists()
     _, meta = load_checkpoint(ns["CKPT_PATH"])
