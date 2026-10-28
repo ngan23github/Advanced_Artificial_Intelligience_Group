@@ -35,9 +35,8 @@ Xem chi tiết ở `rules_othello.md`
 | 2 | Heuristic | `agents/heuristic_agent.py` | chưa làm |
 | 3 | Minimax / Alpha-Beta | `agents/alphabeta_agent.py` | chưa làm |
 | 4 | MCTS (UCT) | `agents/mcts_agent.py` | chưa làm |
-| 5 | Neural Network (supervised) | `agents/nn_agent.py` | chưa làm |
-| 6 | Reinforcement Learning | `agents/rl_agent.py` | chưa làm |
-| 7-8 | AlphaGo/AlphaZero-inspired (nếu kịp) | `agents/az_inspired/` | chưa làm |
+| 5 | Neural Network (supervised) | `agents/nn_agent.py` | code + test xong; chưa train bản chính thức |
+| 6 | Reinforcement Learning | `agents/rl_agent.py` | code + test xong; chưa train bản chính thức |
 
 Các thành phần khác:
 
@@ -46,7 +45,7 @@ Các thành phần khác:
 | Engine (luật, pass, kết thúc, clone) | `othello/` | xong (có test và perft) |
 | Giải đấu round-robin, độ đo (`tournament.py`, `metrics.py`) | `eval/` | xong (có test) |
 | Ablation, profile chi phí | `eval/ablations.py`, `profile_cost.py` | chưa làm |
-| Giao diện demo | `ui/app.py` | chưa làm |
+| Giao diện demo | `ui/` (`python -m ui.app`) | chạy được: người-máy, máy-máy |
 
 (Cập nhật cột trạng thái khi làm xong.)
 
@@ -57,12 +56,11 @@ configs/      cấu hình thí nghiệm (YAML)
 othello/      engine game (encoding.py, rules.py, game.py)
 agents/       các tác tử (base.py là giao diện chung)
 models/       kiến trúc mạng nơ-ron
-train/        sinh dữ liệu và huấn luyện
 eval/         giải đấu, ablation, độ đo
 ui/           giao diện demo
 tests/        test tự động (pytest)
 scripts/      chạy thử và chạy lại thí nghiệm bằng 1 lệnh
-notebooks/    tạo bảng/hình từ log thô
+notebooks/    sinh dữ liệu + huấn luyện (04-06) và tạo bảng/hình từ log thô
 checkpoints/  trọng số mô hình
 data/         dữ liệu huấn luyện
 results/      log thô và hình
@@ -91,19 +89,45 @@ python -m pytest -m slow               # perft độ sâu 7 (khoảng 13 giây)
 python scripts/play_game.py            # 1 ván Random vs Random, in bàn cờ
 python scripts/play_game.py --games 1000 --seed 0   # 1000 ván, thống kê thắng/thua/hòa
 
-# giải đấu (hiện chạy được với Random vs Random_b để thử khung)
+# giải đấu
 python -m eval.tournament --config configs/tournament.yaml --games 20 --run-name smoke
 # kết quả: results/logs/smoke/ (games.jsonl, summary.json, matrix_<mode>.csv, meta.json...)
 ```
 
+### Học máy (cấp 5-6): sinh dữ liệu và huấn luyện (bằng notebook)
+
+Toàn bộ quy trình nằm trong 3 notebook (có chú thích từng bước, hình tự cập nhật khi train). Chạy lần lượt:
+
+| Notebook | Việc | Đầu ra |
+|---|---|---|
+| `notebooks/04_generate_data.ipynb` | expert chơi và gắn nhãn, dedupe, chia train/val/test theo ván | `data/supervised_v1/` |
+| `notebooks/05_train_supervised.ipynb` | train NN bắt chước expert (cấp 5), test đúng 1 lần | `checkpoints/nn_supervised.pt`, `results/logs/train_supervised/<run>/` |
+| `notebooks/06_train_rl.ipynb` | RL self-play (cấp 6), learning curve | `checkpoints/rl_selfplay.pt`, `results/logs/train_rl/<run>/` |
+| `notebooks/03_learning_curves.ipynb` | vẽ hình từ log thô của 05 và 06 | `results/figures/` |
+
+- Mỗi notebook có biến `QUICK_TEST` (ô đầu): đặt `True` để chạy thử cả notebook trong vài giây, ghi ra thư mục tạm.
+- Chạy không cần mở Jupyter: `bash scripts/run_training.sh` (lưu bản đã chạy vào `results/executed_notebooks/`).
+- Mỗi lần chạy chính thức đổi `RUN_NAME` trong notebook 05/06 (không ghi đè log thô).
+- Nhãn dữ liệu do expert gắn (`data.expert_agent` trong `configs/train_supervised.yaml`). 
+- Dữ liệu mẫu nhỏ (100 ván) ở `data/sample/`; notebook 05 ở chế độ `QUICK_TEST` dùng nó.
+- Test: `python -m pytest tests/test_nn_pipeline.py` (gồm chạy thử cả 3 notebook ở chế độ QUICK_TEST).
+
+### Giao diện (Pygame)
+
+```bash
+python -m ui.app                 # menu: chọn Human vs Agent / Agent vs Agent, chọn agent bằng nút < >, thời gian mỗi nước
+python scripts/play_game.py --cli --black random --white temp_positional --games 100   # không giao diện
+```
+
+- Danh sách agent trong menu lấy thẳng từ `configs/agents.yaml` (mỗi mục là một agent, kể cả biến thể ablation và tham số
+  như `checkpoint`). Agent chưa code hoặc thiếu checkpoint hiện lý do màu đỏ và khóa nút Start (không crash).
+- Tạo agent ở mọi nơi (giải đấu, UI, scripts, notebook) đều qua `agents/registry.py` (`build_agent_by_name`, `list_presets`).
+- Cấu trúc `ui/`: `app.py` (vòng lặp), `menu.py`, `match.py` (logic ván + thread AI), `game_view.py` (vẽ bàn cờ/bảng điểm),
+  `widgets.py`, `draw_utils.py`, `config.py` (kích thước, màu).
+
 <!-- ### Kế hoạch (chưa chạy được, sẽ chỉnh lại cho khớp khi code xong)
 
 ```bash
-# sinh dữ liệu và train agent học được
-python -m train.generate_data --config configs/train_supervised.yaml
-python -m train.train_supervised --config configs/train_supervised.yaml
-python -m train.train_rl --config configs/train_rl.yaml
-
 # ablation
 python -m eval.ablations --config configs/tournament.yaml
 

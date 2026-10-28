@@ -18,7 +18,7 @@ workers: 1                     # số tiến trình song song; với agent tính
 # Khi agent code xong, đổi thành danh sách đầy đủ:
 #   agents: [random, heuristic, alphabeta, mcts, nn, rl]
 # (eval/tournament.py CHƯA có cờ --agents; muốn thử nhanh thì sửa dòng dưới)
-agents: [random, random_b]
+agents: [random, heuristic, nn, rl]
 
 # Mỗi chế độ chạy lại TOÀN BỘ giải đấu với ngân sách khác nhau. (code đọc khóa `modes`, KHÔNG phải `budget_modes`)
 # time_budget: GIÂY/nước, truyền thẳng vào agent.select_action (API.md). null = cấu hình mặc định của agent.

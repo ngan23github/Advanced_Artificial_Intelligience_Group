@@ -1,26 +1,35 @@
 # Huấn luyện NN (cấp 5). Điền cho đủ thông tin theo mục 3.4 của đề.
-# Phần việc của Người 3. Các khóa đánh dấu (MỚI) do tui thêm để khớp với khung hiện có; Người 3 chốt hoặc bỏ.
+# Phần việc của Người 3.
 seed: 42
 data:
   source: expert_selfplay      # nguồn nhãn: ghi rõ agent nào sinh ván (nguy cơ học lại heuristic)
-  expert_agent: alphabeta      # (đổi) phải là TÊN MỤC trong configs/agents.yaml; sinh ván bằng agents.registry.build_agent
-  num_games: 5000              # TODO: chốt sau khi thử
-  opening_plies: 8             # (MỚI) số nước đầu chọn ngẫu nhiên: expert tất định mà không có cái này thì 5000 ván gần như
+  # Expert: tên mục trong configs/agents.yaml, HOẶC `temp_positional` (expert tạm trong train/experts.py, dùng khi
+  # Heuristic/Alpha-Beta của Người 2 chưa xong). Khi Người 2 xong: đổi thành `alphabeta` rồi sinh lại dữ liệu.
+  expert_agent: heuristic
+  num_games: 5000              # số ván sinh ra TRƯỚC dedupe; số ván thật sau dedupe ghi trong <output_dir>/meta.json
+  opening_plies: 8             # số nước đầu đi ngẫu nhiên: expert tất định mà không có cái này thì 5000 ván gần như
                                # trùng nhau và `dedupe` sẽ xóa gần hết. Hãy thử tăng nếu số ván sau dedupe quá thấp
+  random_move_prob: 0.05       # (MỚI) sau khai cuộc, xác suất đi nước ngẫu nhiên để tăng đa dạng (nhãn vẫn là nước expert)
   dedupe: true
   split_by_game: true          # chia THEO VÁN, không chia theo từng nước
   split: {train: 0.8, val: 0.1, test: 0.1}   # tổng phải = 1 (có test kiểm tra)
+  output_dir: data/supervised_heuristic_v1   # (MỚI) nơi train.generate_data ghi và train.train_supervised đọc
 model:
   type: policy_value           # policy, value hoặc cả hai
-  input_planes: 2              # (MỚI) khớp othello.encoding.encode_planes: 2 kênh (quân mình, quân đối thủ), 8x8
-  policy_outputs: 64           # (MỚI) khớp action_to_index: 64 ô; nước không hợp lệ phải bị che khi chọn nước
-  hidden: 128                  # TODO: chốt kiến trúc
+  input_planes: 2              # khớp othello.encoding.encode_planes: 2 kênh (quân mình, quân đối thủ), 8x8
+  policy_outputs: 64           # khớp action_to_index: 64 ô; nước không hợp lệ bị che khi train và khi chọn nước
+  channels: 64                 # (MỚI) số kênh 3 lớp tích chập 3x3 (CNN nhỏ, chạy được trên CPU)
+  hidden: 128                  # (MỚI) kích thước lớp ẩn của đầu value
 train:
   epochs: 30
   batch_size: 256
   lr: 0.001
   optimizer: adam
+  weight_decay: 0.0            # (MỚI)
+  value_loss_weight: 1.0       # (MỚI) loss = CE(policy) + value_loss_weight * MSE(value)
+  augment_symmetry: true       # (MỚI) tăng cường bằng 8 phép đối xứng bàn cờ, CHỈ áp lên tập train (sau khi đã chia ván)
+  device: auto                 # (MỚI) auto = cuda nếu có, không thì cpu
 output:
   checkpoint_dir: checkpoints/
-  checkpoint_name: nn_supervised.pt   # (MỚI) checkpoint_dir + checkpoint_name phải trùng nn.checkpoint trong agents.yaml
-  log_dir: results/logs/train_supervised/
+  checkpoint_name: nn_supervised_heuristic.pt   # checkpoint_dir + checkpoint_name phải trùng nn.checkpoint trong agents.yaml
+  log_dir: results/logs/train_supervised_heuristic/

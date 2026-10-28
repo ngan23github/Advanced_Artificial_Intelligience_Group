@@ -11,7 +11,6 @@ venv/
 # Dữ liệu lớn và checkpoint nặng: không đẩy lên git, ghi cách tái sinh trong README
 data/*
 !data/.gitkeep
-!data/sample/        # dữ liệu mẫu nhỏ (Người 3) để nộp kèm
 checkpoints/*
 !checkpoints/.gitkeep
 *.pt

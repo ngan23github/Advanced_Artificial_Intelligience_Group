@@ -1,35 +1,42 @@
 # Huấn luyện RL / self-play (cấp 6). Ghi đủ reward, số episode, exploration, mạng, siêu tham số.
-# Phần việc của Người 3. Các khóa đánh dấu (MỚI) do tui thêm để khớp với khung hiện có; Người 3 chốt hoặc bỏ.
+# Phần việc của Người 3.
 seed: 42
-method: policy_gradient        # TODO: chốt (Q-learning không hợp 8x8, nên dùng policy gradient / deep RL)
+method: policy_gradient        # REINFORCE có baseline (đầu value của mạng). Q-learning/DQN không hợp bàn 8x8 với mạng nhỏ.
 reward:
-  win: 1.0                     # phải trùng game.yaml (có test kiểm tra)
+  win: 1.0                     # phải trùng game.yaml (có test kiểm tra). Reward chỉ phát ở CUỐI ván.
   draw: 0.0
   loss: -1.0
-episodes: 20000                # TODO: chốt theo tài nguyên
+episodes: 20000                # số ván self-play. Nếu máy chậm: giảm và ghi trung thực số ván đã train vào báo cáo
+init_from: checkpoints/nn_supervised_heuristic.pt   # (MỚI) khởi tạo từ NN supervised để so RL vs bắt chước (câu hỏi 3). Dùng --from-scratch để bỏ.
 exploration:
-  # CHÚ Ý: epsilon-greedy hợp với phương pháp dựa trên giá trị (Q-learning / DQN). Với policy gradient,
-  # khám phá thường đến từ việc LẤY MẪU theo phân phối chính sách (kèm entropy bonus), không cần epsilon.
-  # Nếu giữ policy_gradient thì nên đổi khối này (vd type: policy_sampling, entropy_coef: ...); nếu giữ
-  # epsilon-greedy thì đổi method sang value-based (DQN). TODO: Người 3 chốt cho nhất quán.
-  type: epsilon_greedy
-  epsilon_start: 1.0
-  epsilon_end: 0.05
-  decay_episodes: 10000
-model:
-  input_planes: 2              # (MỚI) khớp othello.encoding.encode_planes
-  policy_outputs: 64           # (MỚI) khớp action_to_index
+  # Khám phá đến từ việc LẤY MẪU theo phân phối chính sách + entropy bonus (đã đổi từ epsilon-greedy cho nhất quán
+  # với policy gradient; epsilon-greedy chỉ hợp với phương pháp dựa trên giá trị như DQN).
+  type: policy_sampling
+  temperature: 1.0             # lấy mẫu từ softmax(logit / temperature) khi self-play
+  entropy_coef: 0.01           # hệ số thưởng entropy (chống chính sách co cụm quá sớm)
+self_play:
+  opening_plies: 4             # (MỚI) số nước đầu đi ngẫu nhiên để các ván self-play khác nhau
+model:                         # chỉ dùng khi --from-scratch; nếu nạp init_from thì kiến trúc lấy từ checkpoint
+  input_planes: 2              # khớp othello.encoding.encode_planes
+  policy_outputs: 64           # khớp action_to_index
+  channels: 64
   hidden: 128
 train:
   lr: 0.0005
-  gamma: 1.0
-  batch_size: 128
-checkpoint_every: 1000
-eval:                          # (MỚI) đề yêu cầu đường cong học tập: cứ định kỳ cho agent đang train đấu agent cố định
+  gamma: 1.0                   # chiết khấu (1.0 = return chính là reward cuối ván)
+  episodes_per_update: 16      # (thay cho batch_size) số ván self-play gom cho mỗi bước gradient (khoảng 800-900 nước)
+  value_loss_coef: 0.5
+  normalize_advantage: true
+  grad_clip: 1.0
+  device: auto
+checkpoint_every: 1000         # lưu checkpoint định kỳ vào <checkpoint_dir>/rl_periodic/
+eval:                          # đường cong học tập: cứ định kỳ cho mạng đang train (argmax) đấu agent cố định
   every_episodes: 1000
-  opponents: [random, heuristic]   # TÊN MỤC trong agents.yaml; dùng các ván khai cuộc/seed riêng, không dùng ván đánh giá cuối
+  # ghi vào meta.json. `nn` = NN supervised: đường cong RL vs NN trả lời trực tiếp câu hỏi 3.
+  opponents: [random, heuristic, nn]
   games: 100
+  seed_base: 900               # (MỚI) seed riêng của phần đánh giá khi train (không trùng seed tune 100-102, cuối 0-2)
 output:
   checkpoint_dir: checkpoints/
-  checkpoint_name: rl_selfplay.pt     # (MỚI) checkpoint_dir + checkpoint_name phải trùng rl.checkpoint trong agents.yaml
-  log_dir: results/logs/train_rl/
+  checkpoint_name: rl_selfplay_heuristic.pt     # checkpoint_dir + checkpoint_name phải trùng rl.checkpoint trong agents.yaml
+  log_dir: results/logs/train_rl_heuristic/

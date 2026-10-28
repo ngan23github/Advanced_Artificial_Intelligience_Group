@@ -30,7 +30,6 @@ Advanced_Artificial_Intelligience_Group/
 │   ├── mcts_agent.py              # [stub] cấp 4: UCT, tham số số mô phỏng
 │   ├── nn_agent.py                # [xong] cấp 5: nạp checkpoint, che nước sai, argmax/lấy mẫu
 │   ├── rl_agent.py                # [xong] cấp 6: dùng chung mã suy luận với NNAgent, khác checkpoint
-│   ├── temp_positional_agent.py   # [xong] expert TẠM (bảng điểm vị trí) để gắn nhãn/đối thủ khi Alpha-Beta chưa có
 │   └── registry.py                # [xong] NGUỒN DUY NHẤT tạo agent từ agents.yaml (giải đấu, UI, scripts, notebook)
 │
 ├── models/

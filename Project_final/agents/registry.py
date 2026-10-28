@@ -39,13 +39,12 @@ AGENT_CLASSES = {
     "mcts": "agents.mcts_agent:MCTSAgent",
     "nn": "agents.nn_agent:NNAgent",
     "rl": "agents.rl_agent:RLAgent",
-    "temp_positional": "agents.temp_positional_agent:TempPositionalAgent",  # expert tạm của Người 3
 }
 
 # Nhãn hiển thị (UI) cho mục có tên trùng `type`; mục biến thể (mcts_100...) hiển thị bằng chính tên mục.
 AGENT_LABELS = {
     "random": "Random", "heuristic": "Heuristic", "alphabeta": "Alpha-Beta", "mcts": "MCTS",
-    "nn": "Neural Net", "rl": "RL", "temp_positional": "Temp expert",
+    "nn": "Neural Net", "rl": "RL",
 }
 
 
