@@ -1,24 +1,26 @@
+# Cấu hình chi tiết cho HeuristicAgent
+name: "Heuristic-Weighted"
+endgame_empties: 10          # Số ô trống còn lại để chuyển sang giai đoạn tàn cuộc (Endgame)
 
-agents:
-  heuristic:
-    type: heuristic
-    params:
-      priorities: [win_now, take_corner, avoid_x_square, avoid_c_square, maximize_mobility, maximize_discs]
-      endgame_empties: 10      # <= số ô trống này thì đổi sang chế độ cuối ván (0 = tắt)
+# Bảng trọng số các thành phần đánh giá chiến thuật
+weights:
+  # Giai đoạn đầu và giữa ván (Early / Mid game)
+  early_position: 10.0       # Trọng số vị trí bàn cờ
+  early_corner: 800.0        # Trọng số kiểm soát góc
+  early_mobility: 78.0       # Trọng số độ cơ động
+  early_coin: 10.0           # Trọng số chênh lệch quân cờ
 
-# ---- Biến thể ablation (dán thêm vào `agents:` khi cần chạy giải đấu / chọn trong menu UI) ----
-#  heuristic_no_win_now:
-#    type: heuristic
-#    params: {priorities: [take_corner, avoid_x_square, avoid_c_square, maximize_mobility, maximize_discs]}
-#  heuristic_no_corner:
-#    type: heuristic
-#    params: {priorities: [win_now, avoid_x_square, avoid_c_square, maximize_mobility, maximize_discs]}
-#  heuristic_no_xc:
-#    type: heuristic
-#    params: {priorities: [win_now, take_corner, maximize_mobility, maximize_discs]}
-#  heuristic_no_mobility:
-#    type: heuristic
-#    params: {priorities: [win_now, take_corner, avoid_x_square, avoid_c_square, maximize_discs]}
-#  heuristic_discs_only:                      # ablation 4 trong agents.yaml của nhóm
-#    type: heuristic
-#    params: {priorities: [maximize_discs]}
+  # Giai đoạn tàn cuộc (Endgame)
+  late_position: 10.0
+  late_corner: 1000.0
+  late_corner_mobility: 20.0
+  late_coin: 500.0
+
+# Thứ tự ưu tiên các luật
+priorities:
+  - "win_now"
+  - "take_corner"
+  - "avoid_x_square"
+  - "avoid_c_square"
+  - "maximize_mobility"
+  - "maximize_discs"
