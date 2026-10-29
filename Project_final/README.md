@@ -65,7 +65,6 @@ checkpoints/  trọng số mô hình
 data/         dữ liệu huấn luyện
 results/      log thô và hình
 docs/         báo cáo, slide, poster
-API.md        quy ước và chữ ký hàm chung của cả nhóm
 ```
 Xem chi tiết ở `Structure.txt`
 
@@ -86,8 +85,7 @@ pip install -r requirements.txt
 ```bash
 python -m pytest                       # test nhanh, gồm perft độ sâu 1-6 (vài giây)
 python -m pytest -m slow               # perft độ sâu 7 (khoảng 13 giây)
-python scripts/play_game.py            # 1 ván Random vs Random, in bàn cờ
-python scripts/play_game.py --games 1000 --seed 0   # 1000 ván, thống kê thắng/thua/hòa
+python scripts/play_game.py            # Chơi game trên giao diện
 
 # giải đấu
 python -m eval.tournament --config configs/tournament.yaml --games 20 --run-name smoke
@@ -144,4 +142,4 @@ python -m ui.app
 
 ## 8. Nguồn tham khảo
 
-Xem `CREDITS.md` (phần tự cài đặt, phần kế thừa, công cụ AI đã dùng).
+Xem `CREDITS.md` (phần tự cài đặt, phần kế thừa).

@@ -3,7 +3,7 @@
 #
 # CÁCH ĐỌC FILE NÀY (xem agents/registry.py -> build_agent):
 # - Mỗi mục cấp 1 là MỘT agent; tên mục là tên dùng trong log, ma trận kết quả và danh sách `agents` của tournament.yaml.
-# - `type` (BẮT BUỘC): khóa trong AGENT_CLASSES của registry: random | heuristic | alphabeta | mcts | nn | rl | temp_positional.
+# - `type` (BẮT BUỘC): khóa trong AGENT_CLASSES của registry: random | heuristic | alphabeta | mcts | nn | rl.
 #   Dùng nhiều mục cùng `type` khác `params` để tạo biến thể cho ablation.
 # - `params`: dict các tham số của __init__ của lớp agent tương ứng (người làm agent phải đặt đúng tên tham số).
 #   Registry chỉ đọc `type` và `params`; khóa nào để ngoài `params` sẽ BỊ BỎ QUA.
@@ -41,16 +41,25 @@ agents:
       exploration_c: 1.414     # hằng số UCT
       rollout_policy: random
 
-  nn:
-    type: nn
+  nn_heuristic:
+    type: nn_heuristic
     params:
       checkpoint: checkpoints/nn_supervised_heuristic.pt     # phải trùng output của train_supervised.yaml
 
-  rl:
-    type: rl
+  rl_heuristic:
+    type: rl_heuristic
     params:
       checkpoint: checkpoints/rl_selfplay_heuristic.pt       # phải trùng output của train_rl.yaml
 
+  nn_alphabeta:
+    type: nn_alphabeta
+    params:
+      checkpoint: checkpoints/nn_supervised_alphabeta.pt     # phải trùng output của train_supervised.yaml
+
+  rl_alphabeta:
+    type: rl_alphabeta
+    params:
+      checkpoint: checkpoints/rl_selfplay_alphabeta.pt
 # ---- Biến thể cho ablation (bỏ dấu # khi agent tương ứng đã code xong) ----
 alphabeta_nopruning:                         # ablation 1: bật/tắt cắt tỉa => phải cho CÙNG nước đi, khác số nút
   type: alphabeta
