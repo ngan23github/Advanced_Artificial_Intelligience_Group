@@ -29,7 +29,7 @@ train:
   normalize_advantage: true
   grad_clip: 1.0
   device: auto
-checkpoint_every: 1000         # lưu checkpoint định kỳ vào <checkpoint_dir>/rl_periodic/
+checkpoint_every: 999999       # lưu checkpoint định kỳ vào <checkpoint_dir>/rl_periodic/
 eval:                          # đường cong học tập: cứ định kỳ cho mạng đang train (argmax) đấu agent cố định
   every_episodes: 1000
   # ghi vào meta.json. `nn` = NN supervised: đường cong RL vs NN trả lời trực tiếp câu hỏi 3.
