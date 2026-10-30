@@ -46,8 +46,8 @@ AGENT_CLASSES = {
 # Nhãn hiển thị (UI) cho mục có tên trùng `type`; mục biến thể (mcts_100...) hiển thị bằng chính tên mục.
 AGENT_LABELS = {
     "random": "Random", "heuristic": "Heuristic", "alphabeta": "Alpha-Beta", "mcts": "MCTS",
-    "nn_heuristic": "Neural Network (Heuristic)", "rl_heuristic": "Reinforcement Learning (Heuristic)",
-    "nn_alphabeta": "Neural Network (Alphabeta)", "rl_alphabeta": "Reinforcement Learning (Alphabeta)",
+    "nn_heuristic": "NN (Heuristic)", "rl_heuristic": "RL (Heuristic)",
+    "nn_alphabeta": "NN (Alphabeta)", "rl_alphabeta": "RL (Alphabeta)",
 }
 
 

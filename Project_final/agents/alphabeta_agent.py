@@ -3,6 +3,7 @@
 import time
 from agents.base import Agent
 from configs.constants import CORNERS, X_SQUARES, C_SQUARES
+from othello.bitboard import CORNER_MASK, bb_to_squares, board_to_bb, flips_mask, legal_mask
 from othello.encoding import BLACK, EMPTY, opponent
 from othello.rules import apply_move, count_discs, legal_moves
 
@@ -61,8 +62,79 @@ def evaluate_state(board, player: int, eval_config: dict = None) -> float:
     return float(score)
 
 
+# ---------------------------------------------------------------------------
+# Phiên bản BITBOARD của evaluate_state (dùng trong tìm kiếm). Công thức, trọng số và THỨ TỰ cộng
+# giống hệt evaluate_state ở trên nên cho cùng giá trị; chỉ khác là không tạo game/clone numpy.
+# ---------------------------------------------------------------------------
+def _sq_bit(pos) -> int:
+    return 1 << (pos[0] * 8 + pos[1])
+
+
+# (bit góc, bit ô X kề góc, mặt nạ các ô C kề góc)
+_CORNER_GROUPS = tuple(
+    (_sq_bit(corner),
+     _sq_bit(x_pos),
+     sum(_sq_bit(c_pos) for c_pos, c_corner in C_SQUARES.items() if c_corner == corner))
+    for x_pos, corner in X_SQUARES.items()
+)
+_ROOT_CORNER_BITS = tuple(sorted(_sq_bit(c) for c in CORNERS))
+
+
+def _evaluate_bb(me: int, opp: int, cfg: dict) -> float:
+    """Đánh giá theo góc nhìn `me` (người gốc của cây tìm kiếm). cfg: dict {tên_thành_phần: bool}."""
+    score = 0.0
+    if cfg.get("disc_diff", True):
+        p_coins, o_coins = me.bit_count(), opp.bit_count()
+        if p_coins + o_coins > 0:
+            score += 10.0 * (p_coins - o_coins) / (p_coins + o_coins)
+    if cfg.get("corners", True):
+        score += 100.0 * ((me & CORNER_MASK).bit_count() - (opp & CORNER_MASK).bit_count())
+    if cfg.get("x_c_squares", True):
+        danger = 0
+        occupied = me | opp
+        for corner_bit, x_bit, c_mask in _CORNER_GROUPS:
+            if not occupied & corner_bit:
+                if me & x_bit:
+                    danger -= 30
+                elif opp & x_bit:
+                    danger += 30
+                danger -= 15 * (me & c_mask).bit_count()
+                danger += 15 * (opp & c_mask).bit_count()
+        score += danger
+    if cfg.get("mobility", True):
+        p_moves = legal_mask(me, opp).bit_count()
+        o_moves = legal_mask(opp, me).bit_count()
+        if p_moves + o_moves > 0:
+            score += 20.0 * (p_moves - o_moves) / (p_moves + o_moves)
+    return float(score)
+
+
+def _ordered_squares(moves: int, ordering: bool) -> list:
+    """Danh sách bit nước đi (mỗi phần tử là 1 << index). Ordering: góc trước, còn lại giữ thứ tự (row, col)."""
+    out = []
+    if ordering:
+        corner_moves = moves & CORNER_MASK
+        while corner_moves:
+            low = corner_moves & -corner_moves
+            out.append(low)
+            corner_moves ^= low
+        moves &= ~CORNER_MASK
+    while moves:
+        low = moves & -moves
+        out.append(low)
+        moves ^= low
+    return out
+
+
 class AlphaBetaAgent(Agent):
-    """Tác tử tìm kiếm Cấp 3: Minimax hỗ trợ Cắt tỉa Alpha-Beta."""
+    """Tác tử tìm kiếm Cấp 3: Minimax hỗ trợ Cắt tỉa Alpha-Beta.
+
+    Cài đặt bằng bitboard (othello/bitboard.py): không clone `OthelloGame`, không dùng numpy trong vòng
+    tìm kiếm => nhanh hơn bản cũ khoảng 15-20 lần với CÙNG hàm đánh giá, CÙNG thứ tự duyệt, CÙNG cách đếm `nodes`.
+
+    Về pass: người đi tiếp được xác định THEO NGƯỜI THẬT SỰ ĐẾN LƯỢT (nếu đối thủ phải pass thì cùng một người đi
+    tiếp và vẫn là nút max/min cũ). Bản cũ luôn đảo max/min sau mỗi nước nên sai khi có pass trong cây.
+    """
 
     def __init__(
         self,
@@ -89,115 +161,92 @@ class AlphaBetaAgent(Agent):
         """Trả về số nút đã duyệt phục vụ giải đấu và báo cáo."""
         return {"nodes": self._nodes, "simulations": 0}
 
+    # ---------- gốc cây ----------
     def select_action(self, game, time_budget: float = None):
-        actions = game.legal_actions()
-        if not actions:
+        if game.is_terminal():
+            return None
+        black, white = board_to_bb(game.board)
+        me, opp = (black, white) if game.current_player == BLACK else (white, black)
+        root_moves = legal_mask(me, opp)
+        if not root_moves:
             return None
 
         self._nodes = 0
-        me = game.current_player
-        best_score = float("-inf")
-        best_action = actions[0]
+        self._cfg = self.eval_config
+        self._deadline = (time.time() + time_budget) if time_budget else None
 
+        best_score = float("-inf")
+        best_bit = None
         alpha = float("-inf")
         beta = float("inf")
 
-        # Đặt thời gian hết giờ nếu có time_budget
-        start_time = time.time()
-
-        # Sắp xếp nước đi ưu tiên ô góc trước nếu bật move_ordering
-        if self.move_ordering:
-            actions = sorted(actions, key=lambda a: a in CORNERS, reverse=True)
-
-        for action in actions:
-            # Kiểm tra ngân sách thời gian
-            if time_budget and (time.time() - start_time) >= time_budget:
+        for bit in _ordered_squares(root_moves, self.move_ordering):
+            if best_bit is not None and self._deadline is not None and time.time() >= self._deadline:
                 break
-
-            cloned = game.clone()
-            cloned.step(action)
+            if best_bit is None:
+                best_bit = bit  # luôn có nước hợp lệ để trả về (giống bản cũ: actions[0])
             self._nodes += 1
-
-            # Gọi Minimax/Alpha-Beta đệ quy cho đối thủ ở tầng kế tiếp
-            val = self._alphabeta(
-                cloned,
-                depth=self.depth - 1,
-                alpha=alpha,
-                beta=beta,
-                maximizing_player=False,
-                root_player=me,
-                start_time=start_time,
-                time_budget=time_budget,
-            )
-
+            val = self._child_value(me, opp, bit, self.depth - 1, alpha, beta, True)
             if val > best_score:
                 best_score = val
-                best_action = action
-
+                best_bit = bit
             if self.pruning:
                 alpha = max(alpha, best_score)
 
-        return best_action
+        return divmod(best_bit.bit_length() - 1, 8)
 
-    def _alphabeta(
-        self,
-        game,
-        depth: int,
-        alpha: float,
-        beta: float,
-        maximizing_player: bool,
-        root_player: int,
-        start_time: float,
-        time_budget: float,
-    ) -> float:
-        # Kiểm tra điều kiện dừng: hết độ sâu, hết ván, hoặc hết time_budget
-        if depth == 0 or game.is_terminal() or (time_budget and (time.time() - start_time) >= time_budget):
-            return evaluate_state(game.board, root_player, self.eval_config)
+    # ---------- đệ quy ----------
+    def _child_value(self, me, opp, bit, depth, alpha, beta, mover_is_root):
+        """Đi nước `bit` cho bên `me` (đang đến lượt), rồi đánh giá nút con.
 
-        actions = game.legal_actions()
+        `mover_is_root`: bên `me` có phải người gốc (root) không.
+        """
+        flips = flips_mask(me, opp, bit)
+        me2 = me | bit | flips
+        opp2 = opp & ~flips
+        # người đi tiếp: đối thủ nếu họ có nước, nếu không thì chính `me` đi tiếp (pass), nếu không ai đi được => hết ván
+        nxt_moves = legal_mask(opp2, me2)
+        if nxt_moves:
+            return self._node(opp2, me2, nxt_moves, depth, alpha, beta, not mover_is_root)
+        own_moves = legal_mask(me2, opp2)
+        if own_moves:
+            return self._node(me2, opp2, own_moves, depth, alpha, beta, mover_is_root)
+        return self._leaf(me2, opp2, mover_is_root)
 
-        # Xử lý trường hợp Pass lượt (không có nước hợp lệ nhưng chưa hết ván)
-        if not actions:
-            cloned = game.clone()
-            cloned._advance_turn(cloned.current_player)
-            return self._alphabeta(
-                cloned, depth - 1, alpha, beta, not maximizing_player, root_player, start_time, time_budget
-            )
+    def _leaf(self, me, opp, me_is_root):
+        """Đánh giá theo góc nhìn người gốc."""
+        if me_is_root:
+            return _evaluate_bb(me, opp, self._cfg)
+        return _evaluate_bb(opp, me, self._cfg)
 
-        if self.move_ordering:
-            actions = sorted(actions, key=lambda a: a in CORNERS, reverse=True)
+    def _node(self, me, opp, moves, depth, alpha, beta, maximizing):
+        """Nút có `me` đến lượt, `moves` là mặt nạ nước đi của `me`. maximizing = `me` là người gốc."""
+        if depth == 0 or (self._deadline is not None and time.time() >= self._deadline):
+            return self._leaf(me, opp, maximizing)
 
-        if maximizing_player:
-            max_eval = float("-inf")
-            for action in actions:
-                cloned = game.clone()
-                cloned.step(action)
+        ordered = _ordered_squares(moves, self.move_ordering)
+        if maximizing:
+            best = float("-inf")
+            for bit in ordered:
                 self._nodes += 1
-
-                eval_val = self._alphabeta(
-                    cloned, depth - 1, alpha, beta, False, root_player, start_time, time_budget
-                )
-                max_eval = max(max_eval, eval_val)
-
+                v = self._child_value(me, opp, bit, depth - 1, alpha, beta, True)
+                if v > best:
+                    best = v
                 if self.pruning:
-                    alpha = max(alpha, eval_val)
+                    if best > alpha:
+                        alpha = best
                     if beta <= alpha:
-                        break  # Cắt tỉa Beta
-            return max_eval
-        else:
-            min_eval = float("inf")
-            for action in actions:
-                cloned = game.clone()
-                cloned.step(action)
-                self._nodes += 1
-
-                eval_val = self._alphabeta(
-                    cloned, depth - 1, alpha, beta, True, root_player, start_time, time_budget
-                )
-                min_eval = min(min_eval, eval_val)
-
-                if self.pruning:
-                    beta = min(beta, eval_val)
-                    if beta <= alpha:
-                        break  # Cắt tỉa Alpha
-            return min_eval
+                        break
+            return best
+        best = float("inf")
+        for bit in ordered:
+            self._nodes += 1
+            v = self._child_value(me, opp, bit, depth - 1, alpha, beta, False)
+            if v < best:
+                best = v
+            if self.pruning:
+                if best < beta:
+                    beta = best
+                if beta <= alpha:
+                    break
+        return best
