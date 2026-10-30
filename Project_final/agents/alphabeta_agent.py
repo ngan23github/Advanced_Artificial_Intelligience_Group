@@ -1,203 +1,148 @@
-"""AlphaBetaAgent (Cấp 3): Minimax với Cắt tỉa Alpha-Beta và Tái sử dụng Heuristic."""
+"""AlphaBetaAgent (Cấp 3): Minimax với Cắt tỉa Alpha-Beta."""
 
-import time
+import random
 from agents.base import Agent
-from configs.constants import CORNERS, X_SQUARES, C_SQUARES
-from othello.encoding import BLACK, EMPTY, opponent
-from othello.rules import apply_move, count_discs, legal_moves
-
-
-def evaluate_state(board, player: int, eval_config: dict = None) -> float:
-    """Hàm đánh giá tĩnh (Heuristic Evaluation) cho trạng thái ở lá cây."""
-    if eval_config is None:
-        eval_config = {
-            "disc_diff": True,
-            "mobility": True,
-            "corners": True,
-            "x_c_squares": True,
-        }
-
-    opp = opponent(player)
-    score = 0.0
-
-    # 1. Chênh lệch số quân (disc_diff)
-    if eval_config.get("disc_diff", True):
-        p_coins = (board == player).sum()
-        o_coins = (board == opp).sum()
-        if p_coins + o_coins > 0:
-            score += 10.0 * (p_coins - o_coins) / (p_coins + o_coins)
-
-    # 2. Chiếm góc (corners)
-    if eval_config.get("corners", True):
-        p_corners = sum(1 for r, c in CORNERS if board[r, c] == player)
-        o_corners = sum(1 for r, c in CORNERS if board[r, c] == opp)
-        score += 100.0 * (p_corners - o_corners)
-
-    # 3. Tránh ô X/C nguy hiểm (x_c_squares)
-    if eval_config.get("x_c_squares", True):
-        danger_penalty = 0
-        for x_pos, corner_pos in X_SQUARES.items():
-            if board[corner_pos] == EMPTY:
-                if board[x_pos] == player:
-                    danger_penalty -= 30
-                elif board[x_pos] == opp:
-                    danger_penalty += 30
-
-        for c_pos, corner_pos in C_SQUARES.items():
-            if board[corner_pos] == EMPTY:
-                if board[c_pos] == player:
-                    danger_penalty -= 15
-                elif board[c_pos] == opp:
-                    danger_penalty += 15
-        score += danger_penalty
-
-    # 4. Độ cơ động (mobility)
-    if eval_config.get("mobility", True):
-        p_moves = len(legal_moves(board, player))
-        o_moves = len(legal_moves(board, opp))
-        if p_moves + o_moves > 0:
-            score += 20.0 * (p_moves - o_moves) / (p_moves + o_moves)
-
-    return float(score)
+from eval.evaluation import evaluate_state, normalize_eval_config, normalize_weights, terminal_score
+from othello.encoding import opponent
+from utils.search_utils import SearchTimeout, depth_schedule, order_moves
 
 
 class AlphaBetaAgent(Agent):
-    """Tác tử tìm kiếm Cấp 3: Minimax hỗ trợ Cắt tỉa Alpha-Beta."""
-
     def __init__(
         self,
         depth: int = 4,
         pruning: bool = True,
         move_ordering: bool = True,
         eval: dict = None,
+        weights: dict = None,
+        max_depth: int = None,
         seed: int = None,
         name: str = "AlphaBetaAgent",
         **kwargs
     ):
         super().__init__()
+        if depth < 1:
+            raise ValueError("depth phải >= 1")
         self.depth = depth
         self.pruning = pruning
         self.move_ordering = move_ordering
-        self.eval_config = eval or {}
+        self.max_depth = max_depth
+        self.eval_config = normalize_eval_config(eval)
+        self.weights = normalize_weights(weights)
         self.name = name
+        self.rng = random.Random(seed)
         self._nodes = 0
+        self._deadline = None
+        self._stats = {"nodes": 0, "simulations": 0, "depth": 0, "value": 0.0}
+   
 
     def reset(self) -> None:
         self._nodes = 0
 
     def stats(self) -> dict:
-        """Trả về số nút đã duyệt phục vụ giải đấu và báo cáo."""
-        return {"nodes": self._nodes, "simulations": 0}
+        return dict(self._stats)
+
 
     def select_action(self, game, time_budget: float = None):
         actions = game.legal_actions()
         if not actions:
             return None
 
+        root = game.current_player
+        order = order_moves(actions, self.move_ordering)
         self._nodes = 0
-        me = game.current_player
-        best_score = float("-inf")
-        best_action = actions[0]
 
-        alpha = float("-inf")
-        beta = float("inf")
+        if len(order) == 1:
+            self._stats = {"nodes": 1, "simulations": 0, "depth": 0, "value": 0.0}
 
-        # Đặt thời gian hết giờ nếu có time_budget
-        start_time = time.time()
+            return order[0]
 
-        # Sắp xếp nước đi ưu tiên ô góc trước nếu bật move_ordering
-        if self.move_ordering:
-            actions = sorted(actions, key=lambda a: a in CORNERS, reverse=True)
+        depths, deadline = depth_schedule(game, time_budget, self.depth, self.max_depth)
+        best_action = order[0]
+        value, reached = 0.0, 0
+        rows = []
 
-        for action in actions:
-            # Kiểm tra ngân sách thời gian
-            if time_budget and (time.time() - start_time) >= time_budget:
+        for d in depths:
+            self._deadline = deadline if d > 1 else None
+            try:
+                action, score, r = self._search_root(game, d, order, root)
+            except SearchTimeout:
                 break
+            best_action, value, reached, rows = action, score, d, r
+            order = [action] + [a for a in order if a != action]
 
-            cloned = game.clone()
-            cloned.step(action)
+        self._deadline = None
+        self._stats = {"nodes": self._nodes, "simulations": 0, "depth": reached, "value": round(value, 2)}
+        return best_action
+
+    def _search_root(self, game, depth, order, root):
+        alpha, beta = float("-inf"), float("inf")
+        best_score = float("-inf")
+        best_actions = []
+        rows = []
+
+        for action in order:
+            child = game.clone()
+            child.step(action)
             self._nodes += 1
 
-            # Gọi Minimax/Alpha-Beta đệ quy cho đối thủ ở tầng kế tiếp
-            val = self._alphabeta(
-                cloned,
-                depth=self.depth - 1,
-                alpha=alpha,
-                beta=beta,
-                maximizing_player=False,
-                root_player=me,
-                start_time=start_time,
-                time_budget=time_budget,
-            )
+            val = self._alphabeta(child, depth - 1, alpha, beta, root)
+            exact = (not self.pruning) or val > alpha
+            rows.append((action, val, exact))
 
             if val > best_score:
                 best_score = val
-                best_action = action
+                best_actions = [action]
+            elif val == best_score:
+                best_actions.append(action)
 
             if self.pruning:
                 alpha = max(alpha, best_score)
 
-        return best_action
+        chosen_action = self.rng.choice(best_actions) if best_actions else order[0]
+        return chosen_action, best_score, rows
 
-    def _alphabeta(
-        self,
-        game,
-        depth: int,
-        alpha: float,
-        beta: float,
-        maximizing_player: bool,
-        root_player: int,
-        start_time: float,
-        time_budget: float,
-    ) -> float:
-        # Kiểm tra điều kiện dừng: hết độ sâu, hết ván, hoặc hết time_budget
-        if depth == 0 or game.is_terminal() or (time_budget and (time.time() - start_time) >= time_budget):
-            return evaluate_state(game.board, root_player, self.eval_config)
+    def _alphabeta(self, game, depth, alpha, beta, root):
+        if self._deadline is not None and self._deadline.expired():
+            raise SearchTimeout
+
+        if game.is_terminal():
+            return terminal_score(game.board, root)
+
+        if depth == 0:
+            return evaluate_state(game.board, root, self.eval_config, self.weights)
 
         actions = game.legal_actions()
 
-        # Xử lý trường hợp Pass lượt (không có nước hợp lệ nhưng chưa hết ván)
+        # Xử lý Pass lượt an toàn
         if not actions:
             cloned = game.clone()
-            cloned._advance_turn(cloned.current_player)
-            return self._alphabeta(
-                cloned, depth - 1, alpha, beta, not maximizing_player, root_player, start_time, time_budget
-            )
+            cloned.current_player = opponent(cloned.current_player)
+            if not cloned.legal_actions():
+                return terminal_score(cloned.board, root)
+            return self._alphabeta(cloned, depth - 1, alpha, beta, root)
 
-        if self.move_ordering:
-            actions = sorted(actions, key=lambda a: a in CORNERS, reverse=True)
+        actions = order_moves(actions, self.move_ordering)
+        maximizing = game.current_player == root
 
-        if maximizing_player:
-            max_eval = float("-inf")
-            for action in actions:
-                cloned = game.clone()
-                cloned.step(action)
-                self._nodes += 1
+        best = float("-inf") if maximizing else float("inf")
+        for action in actions:
+            child = game.clone()
+            child.step(action)
+            self._nodes += 1
 
-                eval_val = self._alphabeta(
-                    cloned, depth - 1, alpha, beta, False, root_player, start_time, time_budget
-                )
-                max_eval = max(max_eval, eval_val)
-
+            val = self._alphabeta(child, depth - 1, alpha, beta, root)
+            if maximizing:
+                best = max(best, val)
                 if self.pruning:
-                    alpha = max(alpha, eval_val)
-                    if beta <= alpha:
-                        break  # Cắt tỉa Beta
-            return max_eval
-        else:
-            min_eval = float("inf")
-            for action in actions:
-                cloned = game.clone()
-                cloned.step(action)
-                self._nodes += 1
-
-                eval_val = self._alphabeta(
-                    cloned, depth - 1, alpha, beta, True, root_player, start_time, time_budget
-                )
-                min_eval = min(min_eval, eval_val)
-
+                    alpha = max(alpha, val)
+            else:
+                best = min(best, val)
                 if self.pruning:
-                    beta = min(beta, eval_val)
-                    if beta <= alpha:
-                        break  # Cắt tỉa Alpha
-            return min_eval
+                    beta = min(beta, val)
+
+            if self.pruning and beta <= alpha:
+                break
+
+        return best
+

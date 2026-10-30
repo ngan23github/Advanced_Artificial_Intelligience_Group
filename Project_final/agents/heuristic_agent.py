@@ -1,11 +1,21 @@
-import random
+"""HeuristicAgent: Tác tử Cấp 2 chọn nước đi theo luật ưu tiên cố định (chỉ nhìn 1 nước)."""
 
-import yaml
 import os
+import random
+import yaml
+
 from agents.base import Agent
-from configs.constants import (  C_SQUARES,  CORNERS, DEFAULT_PRIORITIES, ENDGAME_ORDER, RULE_NAMES, X_SQUARES)
+from configs.constants import (
+    C_SQUARES,
+    CORNERS,
+    DEFAULT_PRIORITIES,
+    ENDGAME_ORDER,
+    RULE_NAMES,
+    X_SQUARES,
+)
 from othello.encoding import BLACK, EMPTY, opponent
 from othello.rules import apply_move, count_discs, legal_moves
+
 
 def rule_values(info: dict) -> dict:
     """Giá trị của từng luật cho 1 nước đi (càng lớn càng tốt)."""
@@ -20,43 +30,53 @@ def rule_values(info: dict) -> dict:
 
 
 class HeuristicAgent(Agent):
-    def __init__(self, seed=None, priorities=None, endgame_empties: int = 10, name: str = "Heuristic",config_file: str = "configs/agent_heuristic.yaml"):
-            super().__init__()
-            config = {}
-            if config_file and os.path.exists(config_file):
-                with open(config_file, "r", encoding="utf-8") as f:
-                    config = yaml.safe_load(f) or {}
-            self.name = config.get("name", name)
-            self.endgame_empties = config.get("endgame_empties", endgame_empties)
-            if priorities is None:
-                priorities = config.get("priorities", DEFAULT_PRIORITIES)
-            pr = list(priorities)
-            unknown = [r for r in pr if r not in RULE_NAMES]
-            if unknown:
-                raise ValueError(f"Luật không biết: {unknown}. Hợp lệ: {list(RULE_NAMES)}")
-            if len(set(pr)) != len(pr):
-                raise ValueError(f"priorities có luật bị trùng: {pr}")
-            self.priorities = pr
-            self._endgame_order = [r for r in ENDGAME_ORDER if r in pr]
-            self.rng = random.Random(seed)
-            self._nodes = 0
-            self._tree = None
+    def __init__(
+        self,
+        seed=None,
+        priorities=None,
+        endgame_empties: int = 10,
+        name: str = "Heuristic",
+        config_file: str = "configs/agent_heuristic.yaml",
+        **kwargs
+    ):
+        super().__init__()
+
+        # Đọc cấu hình từ YAML nếu tồn tại
+        config = {}
+        if config_file and os.path.exists(config_file):
+            with open(config_file, "r", encoding="utf-8") as f:
+                config = yaml.safe_load(f) or {}
+
+        self.name = config.get("name", name)
+        self.endgame_empties = config.get("endgame_empties", endgame_empties)
+
+        if priorities is None:
+            priorities = config.get("priorities", DEFAULT_PRIORITIES)
+
+        pr = list(priorities)
+        unknown = [r for r in pr if r not in RULE_NAMES]
+        if unknown:
+            raise ValueError(f"Luật không biết: {unknown}. Hợp lệ: {list(RULE_NAMES)}")
+        if len(set(pr)) != len(pr):
+            raise ValueError(f"priorities có luật bị trùng: {pr}")
+
+        self.priorities = pr
+        self._endgame_order = [r for r in ENDGAME_ORDER if r in pr]
+        self.rng = random.Random(seed)
+        self._nodes = 0
+        self._tree = None
 
     def reset(self) -> None:
         self._nodes = 0
 
     def stats(self) -> dict:
-        # nodes = số vị trí (sau nước thử) đã đánh giá cho nước vừa đi
         return {"nodes": self._nodes, "simulations": 0}
 
     def search_tree(self):
-        """Cây 1 tầng cho UI: gốc -> các nước ứng viên, xếp từ tốt nhất đến tệ nhất."""
         return self._tree
 
-    # ------------------------------------------------------------------
     @staticmethod
     def _danger(board, action) -> int:
-        """0 = ô thường, 1 = ô C nguy hiểm, 2 = ô X nguy hiểm (góc kề còn trống)."""
         if action in X_SQUARES and board[X_SQUARES[action]] == EMPTY:
             return 2
         if action in C_SQUARES and board[C_SQUARES[action]] == EMPTY:
@@ -64,7 +84,6 @@ class HeuristicAgent(Agent):
         return 0
 
     def _score(self, board, me, action, endgame: bool) -> tuple:
-        """(key, info). key: tuple so sánh từ trái sang phải, càng lớn càng tốt."""
         after = apply_move(board, me, action[0], action[1])
         self._nodes += 1
         opp = opponent(me)
@@ -73,7 +92,7 @@ class HeuristicAgent(Agent):
         black, white = count_discs(after)
         mine_discs, opp_discs = (black, white) if me == BLACK else (white, black)
 
-        outcome = 0  # +1 thắng ngay, -1 thua ngay (nước này kết thúc ván), 0 chưa kết thúc / hòa
+        outcome = 0
         if mine_moves == 0 and opp_moves == 0:
             outcome = (mine_discs > opp_discs) - (mine_discs < opp_discs)
 
@@ -90,11 +109,11 @@ class HeuristicAgent(Agent):
         actions = game.legal_actions()
         if not actions:
             return None
-        board, me = game.board, game.current_player  # chỉ đọc, không sửa game
+        board, me = game.board, game.current_player
         self._nodes = 0
         empties = int((board == EMPTY).sum())
         endgame = empties <= self.endgame_empties
-        evals = [(*self._score(board, me, a, endgame), a) for a in actions]  # (key, info, action)
+        evals = [(*self._score(board, me, a, endgame), a) for a in actions]
         best = max(k for k, _, _ in evals)
         chosen = self.rng.choice([a for k, _, a in evals if k == best])
         self._tree = self._build_tree(evals, chosen, endgame)

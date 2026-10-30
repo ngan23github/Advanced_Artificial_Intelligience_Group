@@ -18,21 +18,21 @@ agents:
 
   heuristic:
     type: heuristic
-    params:
-      endgame_empties: 10
+    params: 
+      config_file: "configs/agents_heuristic.yaml"
 
   alphabeta:
-    type: alphabeta
-    params:
-      depth: 4
-      pruning: true            # false = Minimax thuần, dùng cho ablation
-      move_ordering: true
-      eval:
-        disc_diff: true
-        mobility: true
-        corners: true
-        x_c_squares: true
-        stability: false
+      type: alphabeta
+      params:
+        depth: 4
+        pruning: true
+        move_ordering: true
+        eval:
+          disc_diff: true
+          mobility: true
+          corners: true
+          x_c_squares: true
+          stability: false
 
   mcts:
     type: mcts
