@@ -39,26 +39,6 @@ WIN_SCORE = 10_000.0                 # điểm nút KẾT THÚC ván: thắng = 
 # các thành phần hàm lượng giá (khớp khóa `eval` trong agents.yaml) và độ lớn mặc định của chúng
 EVAL_KEYS = ("disc_diff", "mobility", "corners", "x_c_squares", "stability")
 DEFAULT_EVAL = {"disc_diff": True, "mobility": True, "corners": True, "x_c_squares": True, "stability": False}
+# Độ lớn (hệ số nhân) của từng thành phần.
+# LƯU Ý: x_c_squares chỉ là hệ số tinh chỉnh quanh 1.0, vì bf.x_c_balance đã nhân sẵn XC_PENALTY (30/15).
 EVAL_SCALES = {"disc_diff": 10.0, "mobility": 20.0, "corners": 100.0, "x_c_squares": 1.0, "stability": 0.0}
-
-"""Hằng số đánh giá dùng chung cho hệ thống."""
-
-WIN_SCORE = 10000.0
-
-EVAL_KEYS = ("disc_diff", "corners", "x_c_squares", "mobility", "stability")
-
-DEFAULT_EVAL = {
-    "disc_diff": True,
-    "corners": True,
-    "x_c_squares": True,
-    "mobility": True,
-    "stability": False,
-}
-
-EVAL_SCALES = {
-    "disc_diff": 10.0,
-    "corners": 100.0,
-    "x_c_squares": 30.0,
-    "mobility": 20.0,
-    "stability": 0.0,
-}

@@ -1,10 +1,7 @@
-"""Hàm lượng giá thế cờ cho agent tìm kiếm: kiểm tra tham số + chấm điểm.
-s
-"""
+"""Hàm lượng giá thế cờ cho agent tìm kiếm: kiểm tra tham số + chấm điểm."""
 
 from othello import board_features as bf
 from configs.constants import DEFAULT_EVAL, EVAL_KEYS, EVAL_SCALES, WIN_SCORE
-# from othello.encoding import opponent
 
 
 def normalize_eval_config(eval_config=None) -> dict:
