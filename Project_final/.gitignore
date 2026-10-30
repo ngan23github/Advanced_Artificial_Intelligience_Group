@@ -11,10 +11,10 @@ venv/
 # Dữ liệu lớn và checkpoint nặng: không đẩy lên git, ghi cách tái sinh trong README
 data/*
 !data/.gitkeep
-*.pt
-*.pth
-!checkpoints/nn_supervised_heuristic.pt
-!checkpoints/rl_selfplay_heuristic.pt
+# *.pt
+# *.pth
+# !checkpoints/nn_supervised_heuristic.pt
+# !checkpoints/rl_selfplay_heuristic.pt
 
 # Log thô: giữ lại .gitkeep, log lớn thì nén rồi nộp riêng
 results/logs/*

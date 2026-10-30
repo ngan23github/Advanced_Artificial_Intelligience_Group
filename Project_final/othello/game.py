@@ -80,15 +80,24 @@ class OthelloGame:
         return self
 
     def _advance_turn(self, last_mover: int):
-        """Chuyển lượt, tự xử lý pass và kết thúc ván."""
+        """Chuyển lượt, tự xử lý pass và kết thúc ván.
+
+        Nước đi hợp lệ của người đến lượt đã được tính ngay ở đây để quyết định pass,
+        nên lưu luôn vào `_cache_legal` (trước đây bị bỏ đi rồi `legal_actions()` tính lại lần nữa).
+        """
         nxt = opponent(last_mover)
-        if legal_moves(self.board, nxt):
+        moves = legal_moves(self.board, nxt)
+        if moves:
             self.current_player = nxt
-        elif legal_moves(self.board, last_mover):
+            self._cache_legal = moves
+            return
+        moves = legal_moves(self.board, last_mover)
+        if moves:
             self.current_player = last_mover  # đối thủ phải pass
+            self._cache_legal = moves
         else:
             self._terminal = True  # không ai đi được
-        self._cache_legal = None
+            self._cache_legal = None
 
     def clone(self) -> "OthelloGame":
         g = OthelloGame.__new__(OthelloGame)
