@@ -37,14 +37,17 @@ AGENT_CLASSES = {
     "heuristic": "agents.heuristic_agent:HeuristicAgent",
     "alphabeta": "agents.alphabeta_agent:AlphaBetaAgent",
     "mcts": "agents.mcts_agent:MCTSAgent",
-    "nn": "agents.nn_agent:NNAgent",
-    "rl": "agents.rl_agent:RLAgent",
+    "nn_heuristic": "agents.nn_agent:NNAgent",
+    "rl_heuristic": "agents.rl_agent:RLAgent",
+    "nn_alphabeta": "agents.nn_agent:NNAgent",
+    "rl_alphabeta": "agents.rl_agent:RLAgent",
 }
 
 # Nhãn hiển thị (UI) cho mục có tên trùng `type`; mục biến thể (mcts_100...) hiển thị bằng chính tên mục.
 AGENT_LABELS = {
     "random": "Random", "heuristic": "Heuristic", "alphabeta": "Alpha-Beta", "mcts": "MCTS",
-    "nn": "Neural Net", "rl": "RL",
+    "nn_heuristic": "Neural Network (Heuristic)", "rl_heuristic": "Reinforcement Learning (Heuristic)",
+    "nn_alphabeta": "Neural Network (Alphabeta)", "rl_alphabeta": "Reinforcement Learning (Alphabeta)",
 }
 
 
