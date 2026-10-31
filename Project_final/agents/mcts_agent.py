@@ -1,18 +1,26 @@
-"""MCTSAgent (Cấp 4): Monte Carlo Tree Search với UCT.
+"""MCTSAgent (Cấp 4): Monte Carlo Tree Search với UCT, cài bằng bitboard để chạy nhanh.
 
-Bốn bước mỗi lần mô phỏng: chọn (UCT) -> mở rộng 1 nút -> mô phỏng ngẫu nhiên đến hết ván -> lan truyền kết quả.
+Bốn bước mỗi lần mô phỏng:
+    1. Selection      đi xuống theo UCT khi nút đã mở rộng hết và chưa kết thúc.
+    2. Expansion      thêm 1 nút con từ 1 nước chưa thử.
+    3. Simulation     đi ngẫu nhiên (rollout) đến hết ván.
+    4. Backpropagation lan truyền kết quả ngược lên gốc.
 
-Chi tiết quan trọng với Othello:
-- Pass do engine xử lý nên MỘT người có thể đi liên tiếp 2 lần. Vì vậy mỗi nút lưu `mover` (người vừa đặt quân
-  để tới nút đó) thay vì giả định lượt đổi đều; phần thưởng lan truyền theo `mover` của từng nút.
-- Phần thưởng nằm trong [0, 1]: thắng 1, hòa 0.5, thua 0 (theo góc nhìn người đi của nút đó).
-- Khi chọn nước cuối cùng lấy nút con được thăm NHIỀU NHẤT (ổn định hơn lấy tỉ lệ thắng cao nhất).
+Điểm quan trọng với Othello:
+- PASS: engine bỏ lượt khi người kế tiếp không có nước đi, nên một người có thể đi liên tiếp 2 lần. Cây xử lý
+  giống hệt engine (xem `_next_player`): lượt KHÔNG đổi đều.
+- Vì vậy mỗi nút lưu `mover` (người vừa đặt quân để tới nút đó) và phần thưởng được lan truyền THEO NGƯỜI CHƠI
+  TẠI TỪNG NÚT: nút nào có mover == người ở gốc thì cộng r, ngược lại cộng 1 - r.
+- Phần thưởng trong [0, 1]: thắng 1, hòa 0.5, thua 0. Nước cuối cùng = nút con được thăm NHIỀU NHẤT.
 
 Tham số (khớp configs/agents.yaml):
-    simulations       số mô phỏng tối đa cho mỗi nước đi.
-    exploration_c     hằng số UCT (mặc định sqrt(2) ~ 1.414).
-    rollout_policy    "random" (đi ngẫu nhiên) | "heuristic" (ưu tiên góc, tránh ô X/C, còn lại ngẫu nhiên).
-Có time_budget: dừng ở lúc nào đến trước, đủ `simulations` hoặc hết 95% thời gian.
+    simulations      số mô phỏng mỗi nước đi.
+    exploration_c    hằng số UCT (mặc định ~ sqrt(2)).
+    rollout_policy   "random" | "heuristic" (ưu tiên góc, tránh ô X/C, còn lại ngẫu nhiên).
+time_budget: nếu được truyền thì DỪNG THEO GIỜ (95% ngân sách, bỏ qua `simulations`); không truyền thì chạy đúng
+`simulations` lần. Số mô phỏng thực tế luôn ghi vào stats()["simulations"].
+
+Bitboard: dùng othello/bitboard.py (bit = row * 8 + col); kết quả khớp rules.py (đã kiểm thử).
 """
 
 import math
@@ -20,28 +28,73 @@ import random
 import warnings
 
 from agents.base import Agent
-from configs.constants import C_SQUARES, CORNERS, X_SQUARES
-from othello.encoding import opponent
-from othello.rules import apply_move, count_discs, legal_moves
+from configs.constants import C_SQUARES, X_SQUARES
+from othello.bitboard import CORNER_MASK, board_to_bb, flips_mask, legal_mask, popcount
+from othello.encoding import BLACK, BOARD_SIZE, WHITE
 from utils.search_utils import Deadline
 
 ROLLOUT_POLICIES = ("random", "heuristic")
 
+# ---------------------------------------------------------------- bitboard
+# Dùng chung othello/bitboard.py của nhóm (bit i = ô (row, col), i = row * 8 + col).
+_legal_bits = legal_mask
+_to_bits = board_to_bb
+_CORNER_BITS = CORNER_MASK
+
+
+def _bit(pos) -> int:
+    return 1 << (pos[0] * BOARD_SIZE + pos[1])
+
+
+_XC_BITS = sum(_bit(p) for p in (*X_SQUARES, *C_SQUARES))
+
+
+def _bits(x: int) -> list:
+    """Danh sách bit đơn lẻ của x."""
+    out = []
+    while x:
+        b = x & -x
+        out.append(b)
+        x ^= b
+    return out
+
+
+def _play(p: int, o: int, move: int):
+    """Trả về (p', o') sau khi p đặt `move`."""
+    f = flips_mask(p, o, move)
+    return p | move | f, o & ~f
+
 
 class _Node:
-    __slots__ = ("parent", "action", "mover", "game", "untried", "children", "visits", "value")
+    __slots__ = ("parent", "action", "mover", "black", "white", "player", "untried", "children", "visits", "value")
 
-    def __init__(self, game, parent=None, action=None, mover=None, rng=None):
+    def __init__(self, black, white, player, parent=None, action=None, mover=None):
         self.parent = parent
-        self.action = action          # nước đi dẫn tới nút này (None ở gốc)
-        self.mover = mover            # người vừa đi nước đó (None ở gốc)
-        self.game = game              # trạng thái tại nút (đã clone, độc lập)
-        self.untried = game.legal_actions()   # [] nếu ván đã kết thúc
-        if rng is not None:
-            rng.shuffle(self.untried)
+        self.action = action        # (row, col) dẫn tới nút này (None ở gốc)
+        self.mover = mover          # người vừa đi nước đó (None ở gốc)
+        self.black = black
+        self.white = white
+        self.player = player        # người sẽ đi tại nút này (None nếu ván kết thúc)
+        self.untried = []           # các bit nước đi chưa thử
         self.children = []
         self.visits = 0
-        self.value = 0.0              # tổng phần thưởng theo góc nhìn của `mover`
+        self.value = 0.0            # tổng phần thưởng theo góc nhìn của `mover`
+
+
+def _next_player(black: int, white: int, last_mover: int):
+    """Luật pass giống OthelloGame._advance_turn. Trả về người đi tiếp, hoặc None nếu hết ván."""
+    nxt = -last_mover
+    if nxt == BLACK:
+        if _legal_bits(black, white):
+            return BLACK
+        if _legal_bits(white, black):
+            return WHITE
+    else:
+        if _legal_bits(white, black):
+            return WHITE
+        if _legal_bits(black, white):
+            return BLACK
+    return None
 
 
 class MCTSAgent(Agent):
@@ -69,8 +122,8 @@ class MCTSAgent(Agent):
         self.c = float(exploration_c)
         self.rollout_policy = rollout_policy
         self.name = name
-        self.tree_depth = tree_depth      # độ sâu cây trả về cho UI (search_tree)
-        self.tree_branch = tree_branch    # số nút con nhiều lượt thăm nhất giữ lại ở mỗi tầng
+        self.tree_depth = tree_depth      # độ sâu cây xuất cho UI (search_tree)
+        self.tree_branch = tree_branch    # số nút con nhiều lượt thăm nhất giữ lại mỗi tầng
         self.rng = random.Random(seed)
         self._stats = {"nodes": 0, "simulations": 0, "depth": 0, "value": 0.0}
         self._tree = None
@@ -96,36 +149,49 @@ class MCTSAgent(Agent):
             return actions[0]
 
         root_player = game.current_player
-        root = _Node(game.clone(), rng=self.rng)
+        black, white = _to_bits(game.board)
+        root = _Node(black, white, root_player)
+        self._init_untried(root)
+
         deadline = Deadline(time_budget) if time_budget is not None else None
+        limit = None if deadline is not None else self.simulations   # có giờ -> dừng theo giờ
         nodes, max_depth, sims = 1, 0, 0
 
-        while sims < self.simulations:
-            if deadline is not None and sims > 0 and deadline.expired():
+        while True:
+            if deadline is not None:
+                if sims > 0 and deadline.expired():
+                    break
+            elif sims >= limit:
                 break
 
-            # 1) CHỌN: đi xuống theo UCT khi nút đã mở rộng hết và chưa kết thúc
+            # 1) SELECTION
             node, depth = root, 0
             while not node.untried and node.children:
                 node = self._uct_child(node)
                 depth += 1
 
-            # 2) MỞ RỘNG: thêm 1 nút con từ 1 nước chưa thử
+            # 2) EXPANSION
             if node.untried:
-                action = node.untried.pop()
-                mover = node.game.current_player
-                child_game = node.game.clone()
-                child_game.step(action)
-                child = _Node(child_game, parent=node, action=action, mover=mover, rng=self.rng)
+                move = node.untried.pop()
+                mover = node.player
+                if mover == BLACK:
+                    p, o = _play(node.black, node.white, move)
+                    nb, nw = p, o
+                else:
+                    p, o = _play(node.white, node.black, move)
+                    nb, nw = o, p
+                child = _Node(nb, nw, _next_player(nb, nw, mover), parent=node,
+                              action=divmod(move.bit_length() - 1, BOARD_SIZE), mover=mover)
+                self._init_untried(child)
                 node.children.append(child)
                 node = child
                 depth += 1
                 nodes += 1
 
-            # 3) MÔ PHỎNG: đi (gần) ngẫu nhiên đến hết ván, kết quả theo góc nhìn người đi ở gốc
-            reward_root = self._rollout(node.game.board, node.game.current_player, root_player)
+            # 3) SIMULATION (kết quả theo góc nhìn người đi ở gốc)
+            reward_root = self._rollout(node.black, node.white, node.player, root_player)
 
-            # 4) LAN TRUYỀN: mỗi nút nhận phần thưởng theo góc nhìn `mover` của nó
+            # 4) BACKPROPAGATION: theo `mover` của từng nút
             while node is not None:
                 node.visits += 1
                 if node.mover is not None:
@@ -133,11 +199,11 @@ class MCTSAgent(Agent):
                 node = node.parent
 
             sims += 1
-            max_depth = max(max_depth, depth)
+            if depth > max_depth:
+                max_depth = depth
 
-        best = max(root.children, key=lambda ch: ch.visits)
-        top = [ch for ch in root.children if ch.visits == best.visits]
-        chosen = self.rng.choice(top)
+        best_visits = max(ch.visits for ch in root.children)
+        chosen = self.rng.choice([ch for ch in root.children if ch.visits == best_visits])
 
         self._stats = {
             "nodes": nodes,
@@ -149,37 +215,51 @@ class MCTSAgent(Agent):
         return chosen.action
 
     # ---------- các bước nội bộ ----------
+    def _init_untried(self, node):
+        if node.player is None:
+            node.untried = []
+            return
+        p, o = (node.black, node.white) if node.player == BLACK else (node.white, node.black)
+        node.untried = _bits(_legal_bits(p, o))
+        self.rng.shuffle(node.untried)
+
     def _uct_child(self, node):
         log_n = math.log(node.visits)
         c = self.c
-        # q/n: tỉ lệ thắng theo góc nhìn người chọn tại `node` (= mover của nút con)
+        # value/visits: tỉ lệ thắng của người chọn tại `node` (chính là mover của nút con)
         return max(node.children, key=lambda ch: ch.value / ch.visits + c * math.sqrt(log_n / ch.visits))
 
-    def _pick(self, moves):
+    def _pick(self, mv: int) -> int:
         if self.rollout_policy == "heuristic":
-            corners = [a for a in moves if a in CORNERS]
+            corners = mv & _CORNER_BITS
             if corners:
-                moves = corners
+                mv = corners
             else:
-                safe = [a for a in moves if a not in X_SQUARES and a not in C_SQUARES]
+                safe = mv & ~_XC_BITS
                 if safe:
-                    moves = safe
-        return moves[self.rng.randrange(len(moves))]
+                    mv = safe
+        bits = _bits(mv)
+        return bits[self.rng.randrange(len(bits))]
 
-    def _rollout(self, board, player, root_player) -> float:
-        """Đi đến hết ván (cùng luật pass với engine); trả về 1 / 0.5 / 0 theo góc nhìn root_player."""
+    def _rollout(self, black: int, white: int, player, root_player) -> float:
+        """Đi đến hết ván, luật pass như engine. Trả về 1 / 0.5 / 0 theo góc nhìn root_player."""
+        if player is None:
+            cur, p, o = BLACK, black, white     # ván đã kết thúc: chỉ cần đếm quân
+        else:
+            cur = player
+            p, o = (black, white) if cur == BLACK else (white, black)
         while True:
-            moves = legal_moves(board, player)
-            if not moves:
-                player = opponent(player)          # pass
-                moves = legal_moves(board, player)
-                if not moves:
-                    break                          # không ai đi được -> hết ván
-            action = self._pick(moves)
-            board = apply_move(board, player, action[0], action[1])
-            player = opponent(player)
-        black, white = count_discs(board)
-        diff = (black - white) * root_player
+            mv = _legal_bits(p, o)
+            if not mv:
+                if not _legal_bits(o, p):
+                    break                        # không ai đi được -> hết ván
+                p, o, cur = o, p, -cur           # pass
+                continue
+            p, o = _play(p, o, self._pick(mv))
+            p, o, cur = o, p, -cur
+        mine_black = popcount(p) if cur == BLACK else popcount(o)
+        mine_white = popcount(o) if cur == BLACK else popcount(p)
+        diff = (mine_black - mine_white) * root_player
         return 1.0 if diff > 0 else (0.0 if diff < 0 else 0.5)
 
     # ---------- xuất cây cho UI (cùng định dạng với HeuristicAgent.search_tree) ----------
