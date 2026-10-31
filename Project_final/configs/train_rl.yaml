@@ -7,7 +7,7 @@ reward:
   draw: 0.0
   loss: -1.0
 episodes: 20000                # số ván self-play. Nếu máy chậm: giảm và ghi trung thực số ván đã train vào báo cáo
-init_from: checkpoints/nn_supervised_heuristic.pt   # (MỚI) khởi tạo từ NN supervised để so RL vs bắt chước (câu hỏi 3). Dùng --from-scratch để bỏ.
+init_from: checkpoints/nn_supervised_alphabeta.pt   # (MỚI) khởi tạo từ NN supervised để so RL vs bắt chước (câu hỏi 3). Dùng --from-scratch để bỏ.
 exploration:
   # Khám phá đến từ việc LẤY MẪU theo phân phối chính sách + entropy bonus (đã đổi từ epsilon-greedy cho nhất quán
   # với policy gradient; epsilon-greedy chỉ hợp với phương pháp dựa trên giá trị như DQN).
@@ -33,10 +33,10 @@ checkpoint_every: 999999       # lưu checkpoint định kỳ vào <checkpoint_d
 eval:                          # đường cong học tập: cứ định kỳ cho mạng đang train (argmax) đấu agent cố định
   every_episodes: 1000
   # ghi vào meta.json. `nn` = NN supervised: đường cong RL vs NN trả lời trực tiếp câu hỏi 3.
-  opponents: [random, heuristic, nn]
-  games: 100
+  opponents: [random, heuristic, alphabeta, nn_alphabeta]
+  games: 200
   seed_base: 900               # (MỚI) seed riêng của phần đánh giá khi train (không trùng seed tune 100-102, cuối 0-2)
 output:
   checkpoint_dir: checkpoints/
-  checkpoint_name: rl_selfplay_heuristic.pt     # checkpoint_dir + checkpoint_name phải trùng rl.checkpoint trong agents.yaml
-  log_dir: results/logs/train_rl_heuristic/
+  checkpoint_name: rl_selfplay_alphabeta.pt     # checkpoint_dir + checkpoint_name phải trùng rl.checkpoint trong agents.yaml
+  log_dir: results/logs/train_rl_alphabeta/

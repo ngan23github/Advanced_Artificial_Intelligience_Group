@@ -8,12 +8,14 @@ from pathlib import Path
 
 import pytest
 
+from agents.alphabeta_agent import AlphaBetaAgent
 from agents.random_agent import RandomAgent
 from othello.encoding import BLACK, WHITE
 from othello.game import OthelloGame
 
 AGENT_FACTORIES = {
     "random": lambda seed: RandomAgent(seed=seed),
+    "alphabeta": lambda seed: AlphaBetaAgent(depth=2, seed=seed),
 }
 
 # NN (cấp 5) và RL (cấp 6): dùng checkpoint NHỎ, chưa train, tạo tại chỗ (không phụ thuộc file trong checkpoints/).

@@ -2,18 +2,17 @@
 # Phần việc của Người 3.
 seed: 42
 data:
-  source: expert_selfplay      # nguồn nhãn: ghi rõ agent nào sinh ván (nguy cơ học lại heuristic)
-  # Expert: tên mục trong configs/agents.yaml, HOẶC `temp_positional` (expert tạm trong train/experts.py, dùng khi
-  # Heuristic/Alpha-Beta của Người 2 chưa xong). Khi Người 2 xong: đổi thành `alphabeta` rồi sinh lại dữ liệu.
-  expert_agent: heuristic
-  num_games: 5000              # số ván sinh ra TRƯỚC dedupe; số ván thật sau dedupe ghi trong <output_dir>/meta.json
+  source: expert_selfplay      # nguồn nhãn: ghi rõ agent nào sinh ván
+  expert_agent: alphabeta
+  num_games: 5000             # số ván sinh ra TRƯỚC dedupe; số ván thật sau dedupe ghi trong <output_dir>/meta.json
+  num_workers: auto            # số tiến trình sinh ván song song: auto = số lõi - 1; 1 = tuần tự. Kết quả không phụ thuộc giá trị này.
   opening_plies: 8             # số nước đầu đi ngẫu nhiên: expert tất định mà không có cái này thì 5000 ván gần như
                                # trùng nhau và `dedupe` sẽ xóa gần hết. Hãy thử tăng nếu số ván sau dedupe quá thấp
   random_move_prob: 0.05       # sau khai cuộc, xác suất đi nước ngẫu nhiên để tăng đa dạng (nhãn vẫn là nước expert)
   dedupe: true
   split_by_game: true          # chia THEO VÁN, không chia theo từng nước
   split: {train: 0.8, val: 0.1, test: 0.1}   # tổng phải = 1 (có test kiểm tra)
-  output_dir: data/supervised_heuristic_v1   # nơi train.generate_data ghi và train.train_supervised đọc
+  output_dir: data/supervised_alphabeta_v1   # nơi train.generate_data ghi và train.train_supervised đọc
 model:
   type: policy_value           # policy, value hoặc cả hai
   input_planes: 2              # khớp othello.encoding.encode_planes: 2 kênh (quân mình, quân đối thủ), 8x8
@@ -31,5 +30,5 @@ train:
   device: auto                 # auto = cuda nếu có, không thì cpu
 output:
   checkpoint_dir: checkpoints/
-  checkpoint_name: nn_supervised_heuristic.pt   # checkpoint_dir + checkpoint_name phải trùng nn.checkpoint trong agents.yaml
-  log_dir: results/logs/train_supervised_heuristic/
+  checkpoint_name: nn_supervised_alphabeta.pt   # checkpoint_dir + checkpoint_name phải trùng nn.checkpoint trong agents.yaml
+  log_dir: results/logs/train_supervised_alphabeta/
