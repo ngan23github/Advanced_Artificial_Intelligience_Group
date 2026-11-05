@@ -1,3 +1,6 @@
 #!/usr/bin/env bash
-# TODO: chưa làm (stub)
-echo "TODO: run_ablations"
+set -euo pipefail
+python -m eval.ablations \
+  --config configs/tournament.yaml \
+  --out results/logs/ablations \
+  "$@"

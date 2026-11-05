@@ -3,7 +3,7 @@
 import time
 from agents.base import Agent
 from configs.constants import CORNERS
-from eval.evaluation import _evaluate_bb
+from eval.evaluation import _evaluate_bb, evaluate_state
 from othello.bitboard import CORNER_MASK, board_to_bb, flips_mask, legal_mask
 from othello.encoding import BLACK
 

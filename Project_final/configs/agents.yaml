@@ -41,6 +41,16 @@ agents:
       exploration_c: 1.414     # hằng số UCT
       rollout_policy: random
 
+  nn:
+    type: nn
+    params:
+      checkpoint: checkpoints/nn_supervised_alphabeta.pt
+
+  rl:
+    type: rl
+    params:
+      checkpoint: checkpoints/rl_selfplay_alphabeta.pt
+
   nn_heuristic:
     type: nn_heuristic
     params:
@@ -61,19 +71,22 @@ agents:
     params:
       checkpoint: checkpoints/rl_selfplay_alphabeta.pt
 # ---- Biến thể cho ablation (bỏ dấu # khi agent tương ứng đã code xong) ----
-alphabeta_nopruning:                         # ablation 1: bật/tắt cắt tỉa => phải cho CÙNG nước đi, khác số nút
-  type: alphabeta
-  params: {depth: 4, pruning: false}
-# mcts_100:                                    # ablation 2: số mô phỏng
-#   type: mcts
-#   params: {simulations: 100}
-# mcts_5000:
-#   type: mcts
-#   params: {simulations: 5000}
-# alphabeta_discs_only:                        # ablation 3: hàm đánh giá chỉ đếm quân
-#   type: alphabeta
-#   params:
-#     eval: {disc_diff: true, mobility: false, corners: false, x_c_squares: false, stability: false}
-# heuristic_discs_only:                        # ablation 4: heuristic chỉ đếm quân (bỏ góc/X/C/mobility)
-#   type: heuristic
-#   params: {priorities: [maximize_discs]}
+  alphabeta_nopruning:                   # ablation 1: bật/tắt cắt tỉa
+    type: alphabeta
+    params: {depth: 4, pruning: false}
+  mcts_100:
+    type: mcts
+    params: {simulations: 100}
+  mcts_500:
+    type: mcts
+    params: {simulations: 500}
+  mcts_5000:
+    type: mcts
+    params: {simulations: 5000}
+  alphabeta_discs_only:
+    type: alphabeta
+    params:
+      eval: {disc_diff: true, mobility: false, corners: false, x_c_squares: false, stability: false}
+  heuristic_discs_only:
+    type: heuristic
+    params: {priorities: [maximize_discs]}

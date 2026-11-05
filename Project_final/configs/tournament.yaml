@@ -14,10 +14,7 @@ opening_plies: 4               # số nước đầu chọn ngẫu nhiên (có s
                                # cần thiết vì agent tất định (Alpha-Beta) đấu nhau sẽ lặp đúng 1 ván
 workers: 1                     # số tiến trình song song; với agent tính theo thời gian để <= số lõi vật lý - 1
 
-# TẠM THỜI chỉ 2 agent chạy được (heuristic/alphabeta/mcts/nn/rl còn là stub, đưa vào đây sẽ lỗi ImportError).
-# Khi agent code xong, đổi thành danh sách đầy đủ:
-#   agents: [random, heuristic, alphabeta, mcts, nn, rl]
-# (eval/tournament.py CHƯA có cờ --agents; muốn thử nhanh thì sửa dòng dưới)
+# Danh sách mặc định dùng cho đánh giá; có thể ghi đè bằng cờ --agents.
 agents: [random, heuristic, nn, rl]
 
 # Mỗi chế độ chạy lại TOÀN BỘ giải đấu với ngân sách khác nhau. (code đọc khóa `modes`, KHÔNG phải `budget_modes`)

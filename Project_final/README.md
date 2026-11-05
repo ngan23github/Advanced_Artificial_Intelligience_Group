@@ -123,15 +123,22 @@ python scripts/play_game.py --cli --black random --white temp_positional --games
 - Cấu trúc `ui/`: `app.py` (vòng lặp), `menu.py`, `match.py` (logic ván + thread AI), `game_view.py` (vẽ bàn cờ/bảng điểm),
   `widgets.py`, `draw_utils.py`, `config.py` (kích thước, màu).
 
-<!-- ### Kế hoạch (chưa chạy được, sẽ chỉnh lại cho khớp khi code xong)
+### Đánh giá nâng cao
 
 ```bash
-# ablation
+# tune trên tập riêng (40 ván/cặp, seeds 100-102)
+python -m eval.tournament --config configs/tournament_tune.yaml
+
+# ablation; smoke test có thể thêm --games 2
 python -m eval.ablations --config configs/tournament.yaml
 
-# demo chơi người-máy / máy-máy
-python -m ui.app
-``` -->
+# profile thời gian, nodes/simulations và RAM
+python -m eval.profile_cost --agents random,heuristic,alphabeta,mcts
+```
+
+Kết quả ablation được tách theo thí nghiệm trong `results/logs/ablations/`.
+Profile mặc định ghi vào `results/logs/profile_cost.json`. Có thể chọn agent,
+số vị trí và ngân sách bằng `--agents`, `--samples`, `--time-budget`.
 
 ## 7. Tái lập thí nghiệm
 

@@ -1,0 +1,19 @@
+# Cấu hình tune riêng. Không dùng log của cấu hình này làm kết quả đánh giá cuối.
+run_name: tune_v1
+agents_config: configs/agents.yaml
+
+games_per_pair: 40
+swap_sides: true
+seeds: [100, 101, 102]
+opening_plies: 4
+workers: 1
+agents: [random, heuristic, alphabeta, mcts, nn, rl]
+
+modes:
+  - name: time_per_move
+    time_budget: 0.5
+  - name: default_config
+    time_budget: null
+
+output_dir: results/logs/
+figure_dir: results/figures/
