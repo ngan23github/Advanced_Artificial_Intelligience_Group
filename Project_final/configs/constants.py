@@ -20,13 +20,14 @@ C_SQUARES = {
 RULE_NAMES = (
     "win_now",
     "take_corner",
+    "deny_corner",        # MỚI: chặn đối thủ - không đi nước khiến đối thủ lấy được góc ngay
     "avoid_x_square",
     "avoid_c_square",
     "maximize_mobility",
     "maximize_discs"
 )
 DEFAULT_PRIORITIES = list(RULE_NAMES)
-ENDGAME_ORDER = ("win_now", "take_corner", "maximize_discs", "maximize_mobility")
+ENDGAME_ORDER = ("win_now", "take_corner", "deny_corner", "maximize_discs", "maximize_mobility")
 
 # ---------------------------------------------------------------------------
 # THÊM MỚI: mức nguy hiểm của ô và hằng số hàm lượng giá của Alpha-Beta

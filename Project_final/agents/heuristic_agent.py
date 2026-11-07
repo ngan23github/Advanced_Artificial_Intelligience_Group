@@ -22,6 +22,7 @@ def rule_values(info: dict) -> dict:
     return {
         "win_now": info["outcome"],
         "take_corner": info["corner"],
+        "deny_corner": -info["opp_corner_moves"],   # càng ít góc đối thủ lấy được càng tốt
         "avoid_x_square": -int(info["danger"] == 2),
         "avoid_c_square": -int(info["danger"] == 1),
         "maximize_mobility": info["mobility"],
@@ -34,8 +35,8 @@ class HeuristicAgent(Agent):
         self,
         seed=None,
         priorities=None,
-        endgame_empties: int = 10,
-        name: str = "Heuristic",
+        endgame_empties: int = None,
+        name: str = None,
         config_file: str = "configs/agent_heuristic.yaml",
         **kwargs
     ):
@@ -47,8 +48,11 @@ class HeuristicAgent(Agent):
             with open(config_file, "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f) or {}
 
-        self.name = config.get("name", name)
-        self.endgame_empties = config.get("endgame_empties", endgame_empties)
+        # Thứ tự ưu tiên: THAM SỐ TRUYỀN VÀO > YAML > mặc định (trước đây YAML đè tham số truyền vào)
+        self.name = name if name is not None else config.get("name", "Heuristic")
+        self.endgame_empties = (
+            endgame_empties if endgame_empties is not None else config.get("endgame_empties", 10)
+        )
 
         if priorities is None:
             priorities = config.get("priorities", DEFAULT_PRIORITIES)
@@ -87,8 +91,9 @@ class HeuristicAgent(Agent):
         after = apply_move(board, me, action[0], action[1])
         self._nodes += 1
         opp = opponent(me)
-        mine_moves = len(legal_moves(after, me))
-        opp_moves = len(legal_moves(after, opp))
+        mine_list = legal_moves(after, me)
+        opp_list = legal_moves(after, opp)
+        mine_moves, opp_moves = len(mine_list), len(opp_list)
         black, white = count_discs(after)
         mine_discs, opp_discs = (black, white) if me == BLACK else (white, black)
 
@@ -99,7 +104,16 @@ class HeuristicAgent(Agent):
         mobility = mine_moves - opp_moves
         corner = int(action in CORNERS)
         danger = self._danger(board, action)
-        info = {"corner": corner, "danger": danger, "mobility": mobility, "discs": mine_discs, "outcome": outcome}
+        # số góc mà đối thủ có thể lấy ngay ở lượt kế tiếp (sau nước đi này)
+        opp_corner_moves = sum(1 for m in opp_list if m in CORNERS)
+        info = {
+            "corner": corner,
+            "danger": danger,
+            "mobility": mobility,
+            "discs": mine_discs,
+            "outcome": outcome,
+            "opp_corner_moves": opp_corner_moves,
+        }
 
         vals = rule_values(info)
         order = self._endgame_order if endgame else self.priorities
@@ -116,11 +130,12 @@ class HeuristicAgent(Agent):
         evals = [(*self._score(board, me, a, endgame), a) for a in actions]
         best = max(k for k, _, _ in evals)
         chosen = self.rng.choice([a for k, _, a in evals if k == best])
-        self._tree = self._build_tree(evals, chosen, endgame)
+        order = self._endgame_order if endgame else self.priorities
+        self._tree = self._build_tree(evals, chosen, endgame, order)
         return chosen
 
     @staticmethod
-    def _build_tree(evals, chosen, endgame):
+    def _build_tree(evals, chosen, endgame, order):
         children = []
         for _, info, a in sorted(evals, key=lambda e: e[0], reverse=True):
             if info["outcome"] > 0:
@@ -129,6 +144,8 @@ class HeuristicAgent(Agent):
                 caption = "loses"
             elif info["corner"]:
                 caption = "corner"
+            elif info["opp_corner_moves"]:
+                caption = f"gives corner x{info['opp_corner_moves']}"
             else:
                 caption = f"mob {info['mobility']:+d}"
             children.append({
@@ -137,11 +154,11 @@ class HeuristicAgent(Agent):
                 "caption": caption,
                 "best": a == chosen,
                 "text": (f"outcome={info['outcome']:+d}  corner={info['corner']}  "
+                         f"opp_corner_moves={info['opp_corner_moves']}  "
                          f"X/C danger={info['danger']} (0 safe, 1 C, 2 X)  "
                          f"mobility={info['mobility']:+d}  discs={info['discs']}"),
                 "children": [],
             })
-        rule = ("endgame: win > corner > discs > mobility" if endgame
-                else "win > corner > avoid X > avoid C > mobility > discs")
+        rule = ("endgame: " if endgame else "") + " > ".join(order)
         return {"move": None, "label": "root", "caption": f"{len(evals)} moves",
                 "text": "Priority: " + rule, "children": children}

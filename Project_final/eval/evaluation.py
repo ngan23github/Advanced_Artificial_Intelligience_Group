@@ -102,16 +102,22 @@ _CORNER_GROUPS = tuple(
 )
 
 
-def _evaluate_bb(me: int, opp: int, cfg: dict) -> float:
-    """Đánh giá theo góc nhìn `me` trực tiếp trên Bitboard 64-bit."""
+def _terminal_bb(me: int, opp: int) -> float:
+    """Điểm nút kết thúc ván theo góc nhìn `me` (cùng công thức terminal_score)."""
+    diff = me.bit_count() - opp.bit_count()
+    return WIN_SCORE + diff if diff > 0 else (-WIN_SCORE + diff if diff < 0 else 0.0)
+
+
+def _evaluate_bb(me: int, opp: int, cfg: dict, w: dict = None) -> float:
+    w = w or EVAL_SCALES
     score = 0.0
     if cfg.get("disc_diff", True):
-        p_coins, o_coins = me.bit_count(), opp.bit_count()
-        if p_coins + o_coins > 0:
-            score += 10.0 * (p_coins - o_coins) / (p_coins + o_coins)
+        p, o = me.bit_count(), opp.bit_count()
+        if p + o > 0:
+            score += w["disc_diff"] * (p - o) / (p + o)
 
     if cfg.get("corners", True):
-        score += 100.0 * ((me & CORNER_MASK).bit_count() - (opp & CORNER_MASK).bit_count())
+        score += w["corners"] * ((me & CORNER_MASK).bit_count() - (opp & CORNER_MASK).bit_count())
 
     if cfg.get("x_c_squares", True):
         danger = 0
@@ -124,12 +130,10 @@ def _evaluate_bb(me: int, opp: int, cfg: dict) -> float:
                     danger += 30
                 danger -= 15 * (me & c_mask).bit_count()
                 danger += 15 * (opp & c_mask).bit_count()
-        score += danger
+        score += w["x_c_squares"] * danger
 
     if cfg.get("mobility", True):
-        p_moves = legal_mask(me, opp).bit_count()
-        o_moves = legal_mask(opp, me).bit_count()
-        if p_moves + o_moves > 0:
-            score += 20.0 * (p_moves - o_moves) / (p_moves + o_moves)
-
+        pm, om = legal_mask(me, opp).bit_count(), legal_mask(opp, me).bit_count()
+        if pm + om > 0:
+            score += w["mobility"] * (pm - om) / (pm + om)
     return float(score)
