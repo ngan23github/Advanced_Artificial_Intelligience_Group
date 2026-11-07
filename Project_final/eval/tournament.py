@@ -94,7 +94,18 @@ def play_game(black: Agent, white: Agent,
         if action not in legal:
             raise IllegalAgentMove(
                 f"{agent.name} đi nước không hợp lệ {action}; hợp lệ: {legal}")
-        entry = {"p": player, "a": list(action), "ms": round(ms, 3)}
+        over_budget = (
+            budget is not None
+            and budget >= 0
+            and ms / 1000.0 > float(budget) * 1.1
+        )
+        entry = {
+            "p": player,
+            "a": list(action),
+            "ms": round(ms, 3),
+            "budget": budget,
+            "over_budget": over_budget,
+        }
         stats = agent.stats()
         if stats:
             entry["stats"] = dict(stats)
@@ -158,6 +169,38 @@ def split_pairs(games_per_pair: int, seeds: list) -> dict:
 
 def _budget_for(mode: dict, agent_name: str):
     return (mode.get("per_agent") or {}).get(agent_name, mode.get("time_budget"))
+
+
+def _budget_summary(records: list, names: list) -> dict:
+    """Gộp số nước/ván vượt ngân sách theo agent cho một mode."""
+    by_agent = {
+        name: {"over_budget_moves": 0, "over_budget_games": 0}
+        for name in names
+    }
+    over_budget_games = 0
+    over_budget_moves = 0
+    for record in records:
+        game_agents = {
+            BLACK: record["black"],
+            WHITE: record["white"],
+        }
+        exceeded = set()
+        for move in record.get("move_log", []):
+            if not move.get("over_budget", False):
+                continue
+            over_budget_moves += 1
+            agent_name = game_agents[move["p"]]
+            by_agent[agent_name]["over_budget_moves"] += 1
+            exceeded.add(agent_name)
+        if exceeded:
+            over_budget_games += 1
+            for agent_name in exceeded:
+                by_agent[agent_name]["over_budget_games"] += 1
+    return {
+        "over_budget_moves": over_budget_moves,
+        "over_budget_games": over_budget_games,
+        "by_agent": by_agent,
+    }
 
 
 def build_tasks(cfg: dict, specs: dict) -> list:
@@ -243,11 +286,11 @@ def run_round_robin(cfg: dict, specs: dict, out_dir, workers: int = 1, verbose: 
                 log.flush()
                 done += 1
                 if verbose and (done % step == 0 or done == total):
-                    print(f"  {done}/{total} cặp ván ({100 * done // total}%)", flush=True)
+                    print(f"  {done}/{total} pairs ({100 * done // total}%)", flush=True)
 
     if verbose:
-        print(f"Giải đấu '{cfg.get('run_name', '')}': {len(names)} agent, {total} cặp ván "
-              f"({2 * total} ván), workers={workers}")
+        print(f"Tournament '{cfg.get('run_name', '')}': {len(names)} agents, {total} pairs "
+              f"({2 * total} games), workers={workers}")
     if workers and workers > 1:
         with ProcessPoolExecutor(max_workers=workers) as pool:
             consume(pool.map(play_pair, tasks, chunksize=1))  # map giữ nguyên thứ tự => log tất định
@@ -258,8 +301,11 @@ def run_round_robin(cfg: dict, specs: dict, out_dir, workers: int = 1, verbose: 
     modes_summary = {}
     for mode in cfg["modes"]:
         matches, matrix = [], {n: {} for n in names}
+        mode_records = []
         for a, b in itertools.combinations(names, 2):
-            agg = aggregate_match(grouped[(mode["name"], a, b)], a, b)
+            records = grouped[(mode["name"], a, b)]
+            mode_records.extend(records)
+            agg = aggregate_match(records, a, b)
             matches.append(agg)
             score = agg["a_summary"]["score"]
             matrix[a][b], matrix[b][a] = score, 1.0 - score
@@ -270,6 +316,7 @@ def run_round_robin(cfg: dict, specs: dict, out_dir, workers: int = 1, verbose: 
             "matches": matches,
             "score_matrix": matrix,
             "mean_score": mean_score,
+            "budget": _budget_summary(mode_records, names),
         }
         _write_matrix_csv(out_dir / f"matrix_{mode['name']}.csv", names, matrix)
 
@@ -291,7 +338,7 @@ def run_round_robin(cfg: dict, specs: dict, out_dir, workers: int = 1, verbose: 
     with open(out_dir / "meta.json", "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=2)
     if verbose:
-        print(f"Xong trong {meta['elapsed_seconds']}s. Kết quả: {out_dir}")
+        print(f"Finished in {meta['elapsed_seconds']}s. Results: {out_dir}")
         for mode_name, ms in modes_summary.items():
             ranking = sorted(ms["mean_score"].items(), key=lambda kv: -kv[1])
             print(f"  [{mode_name}] " + " > ".join(f"{n} ({s:.3f})" for n, s in ranking))
@@ -305,12 +352,20 @@ def load_yaml(path) -> dict:
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="Giải đấu round-robin Othello")
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8")
+    parser = argparse.ArgumentParser(description="Othello round-robin tournament")
     parser.add_argument("--config", default="configs/tournament.yaml")
-    parser.add_argument("--out", help="ghi đè output_dir trong config")
-    parser.add_argument("--run-name", help="ghi đè run_name trong config")
-    parser.add_argument("--games", type=int, help="ghi đè games_per_pair (để chạy thử nhanh)")
-    parser.add_argument("--workers", type=int, help="ghi đè workers")
+    parser.add_argument("--out", help="override output_dir in config")
+    parser.add_argument("--run-name", help="override run_name in config")
+    parser.add_argument("--games", type=int, help="override games_per_pair for a smoke run")
+    parser.add_argument("--workers", type=int, help="override worker count")
+    parser.add_argument(
+        "--agents",
+        help="comma-separated agent names overriding agents in config",
+    )
     args = parser.parse_args(argv)
 
     cfg = load_yaml(args.config)
@@ -318,6 +373,11 @@ def main(argv=None):
         cfg["games_per_pair"] = args.games
     if args.run_name:
         cfg["run_name"] = args.run_name
+    if args.agents is not None:
+        names = [name.strip() for name in args.agents.split(",") if name.strip()]
+        if len(names) < 2 or len(names) != len(set(names)):
+            parser.error("--agents requires at least two distinct agent names")
+        cfg["agents"] = names
 
     agents_path = Path(cfg["agents_config"])
     if not agents_path.exists():  # cho phép chạy từ thư mục khác

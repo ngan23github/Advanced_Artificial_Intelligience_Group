@@ -41,6 +41,30 @@ def bootstrap_score_ci(results: Sequence[int], n_boot: int = 2000,
     return (float(np.quantile(means, alpha / 2)), float(np.quantile(means, 1 - alpha / 2)))
 
 
+def bootstrap_score_ci_pairs(pairs: Sequence[Sequence[int]], n_boot: int = 2000,
+                             alpha: float = 0.05, seed: int = 0) -> tuple:
+    """Bootstrap score theo cặp ván cùng khai cuộc, đổi màu.
+
+    Mỗi phần tử là một cặp kết quả theo góc nhìn cùng một agent. Lấy mẫu cả cặp
+    giữ được tương quan giữa hai ván đổi màu và tránh làm CI hẹp giả tạo.
+    """
+    if not pairs:
+        return (0.0, 1.0)
+    pair_scores = np.asarray([
+        np.mean((np.asarray(pair, dtype=float) + 1.0) / 2.0)
+        for pair in pairs if len(pair)
+    ], dtype=float)
+    if len(pair_scores) == 0:
+        return (0.0, 1.0)
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(pair_scores), size=(n_boot, len(pair_scores)))
+    means = pair_scores[idx].mean(axis=1)
+    return (
+        float(np.quantile(means, alpha / 2)),
+        float(np.quantile(means, 1 - alpha / 2)),
+    )
+
+
 # ---------- thắng / hòa / thua ----------
 def score_from_counts(wins: int, draws: int, losses: int) -> float:
     n = wins + draws + losses
@@ -127,11 +151,18 @@ def aggregate_match(records: Sequence[dict], a_name: str, b_name: str) -> dict:
             "simulations_mean": _mean_stat(moves, "simulations"),
         }
 
+    pair_results = {}
+    for record, result in zip(records, a_results):
+        pair_key = (record.get("seed"), record.get("pair"))
+        pair_results.setdefault(pair_key, []).append(result)
+
     return {
         "a": a_name,
         "b": b_name,
         "a_summary": summarize_outcomes(a_results),
-        "a_score_bootstrap_ci": list(bootstrap_score_ci(a_results)),
+        "a_score_bootstrap_ci": list(
+            bootstrap_score_ci_pairs(list(pair_results.values()))
+        ),
         "a_as_black": summarize_outcomes(as_black),   # A đi trước
         "a_as_white": summarize_outcomes(as_white),   # A đi sau
         "black_win_rate": black_wins / n if n else float("nan"),
