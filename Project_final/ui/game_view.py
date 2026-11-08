@@ -1,12 +1,14 @@
 """Màn hình chơi: vẽ bàn cờ, quân, nước hợp lệ, thẻ điểm từng bên, trạng thái và nút điều khiển."""
 
+import time
 import pygame
 import pygame.gfxdraw as gfx
 
 from othello.encoding import BLACK, WHITE
 from ui.config import (BOARD_PX, BOARD_W, C_ACCENT, C_BOARD, C_BOARD_ALT, C_CARD, C_DIM, C_DISC_B, C_DISC_W, C_GRID,
-                       C_LAST, C_PANEL, C_TEXT, C_WARN, CELL, MARGIN, N, NAME, PANEL_W, WIN_H)
-from ui.draw_utils import disc
+                       C_LAST, C_PANEL, C_TEXT, C_WARN, CELL, FLIP_TIME, FLIP_WAVE, MARGIN, N, NAME, PANEL_W,
+                       PLACE_TIME, WIN_H)
+from ui.draw_utils import disc, draw_flipping_disc, draw_placed_disc, load_move_sound
 from ui.widgets import Button
 
 
@@ -14,6 +16,8 @@ class GameView:
     def __init__(self, screen, fonts):
         self.screen, self.fonts = screen, fonts
         self.board_bg = self._make_board_bg()    # nền bàn cờ vẽ sẵn một lần (lưới + nhãn a-h, 1-8)
+        self.move_sound = load_move_sound()      # âm thanh đặt cờ (ui/assets/chess_sound.mp3)
+        self._sound_tag = None                   # đánh dấu nước đi đã phát âm thanh
 
     def _make_board_bg(self):
         s = pygame.Surface((BOARD_W, BOARD_W))
@@ -51,18 +55,50 @@ class GameView:
         g, scr = match.game, self.screen
         scr.blit(self.board_bg, (0, 0))
         center = lambda r, c: (MARGIN + c * CELL + CELL // 2, MARGIN + r * CELL + CELL // 2)
+        rad = CELL // 2 - 8
+        move_time = getattr(match, "move_time", 0.0)
+        elapsed = time.time() - move_time
+        tag = (id(match), len(g.move_history), match.last_move)
+        if tag != self._sound_tag:
+            self._sound_tag = tag
+            if move_time > 0.0 and self.move_sound is not None:
+                self.move_sound.play()
+        flip_delays = {}
+        if match.last_move is not None:
+            r0, c0 = match.last_move
+            for fr, fc in getattr(match, "last_flips", ()):
+                dist = max(abs(fr - r0), abs(fc - c0))
+                flip_delays[(fr, fc)] = 0.08 + (dist - 1) * FLIP_WAVE
+
         for r in range(N):
             for c in range(N):
                 v = int(g.board[r, c])
-                if v:
-                    cx, cy = center(r, c)
-                    disc(scr, (0, 0, 0, 80), (cx + 2, cy + 3), CELL // 2 - 8)          # bóng
-                    disc(scr, C_DISC_B if v == BLACK else C_DISC_W, (cx, cy), CELL // 2 - 8)
+                if not v:
+                    continue
+                cx, cy = center(r, c)
+                new_col = C_DISC_B if v == BLACK else C_DISC_W
+                old_col = C_DISC_W if v == BLACK else C_DISC_B
+                if (r, c) == match.last_move and 0.0 <= elapsed < PLACE_TIME:
+                    draw_placed_disc(scr, new_col, C_ACCENT, (cx, cy), rad, elapsed / PLACE_TIME)
+                elif (r, c) in flip_delays and 0.0 <= elapsed < flip_delays[(r, c)] + FLIP_TIME:
+                    delay = flip_delays[(r, c)]
+                    if elapsed <= delay:
+                        disc(scr, (0, 0, 0, 80), (cx + 2, cy + 3), rad)
+                        disc(scr, old_col, (cx, cy), rad)
+                    else:
+                        draw_flipping_disc(scr, old_col, new_col, (cx, cy), rad, (elapsed - delay) / FLIP_TIME)
+                else:
+                    disc(scr, (0, 0, 0, 80), (cx + 2, cy + 3), rad)                     # bóng
+                    disc(scr, new_col, (cx, cy), rad)
         if not g.is_terminal() and match.agents[g.current_player] is None:               # gợi ý nước hợp lệ cho người
             for r, c in g.legal_actions():
                 disc(scr, (0, 0, 0, 90), center(r, c), 8)
         if match.last_move is not None:
-            disc(scr, C_LAST, center(*match.last_move), 6)
+            lx, ly = center(*match.last_move)
+            if 0.0 <= elapsed < PLACE_TIME:
+                p = elapsed / PLACE_TIME
+                ly -= int(round(10 * (1.0 - p) ** 2))
+            disc(scr, C_LAST, (lx, ly), 6)
 
     def _card(self, match, y, player):
         g, scr = match.game, self.screen

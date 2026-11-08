@@ -141,3 +141,23 @@ def test_app_frames_menu_to_game_and_error_on_bad_agent(monkeypatch, agents_cfg)
     app.start_match({"black": "nn_missing", "white": None, "time": None})   # tạo agent lỗi -> báo trên menu, không văng lỗi
     assert app.state == "menu" and "Could not create agent" in app.menu.error
     pygame.quit()
+
+
+def test_place_and_flip_animations_render(agents_cfg):
+    pygame = pytest.importorskip("pygame")
+    from ui.app import App
+    from ui.config import CELL, MARGIN
+    app = App(seed=0, agents_config=agents_cfg)
+    app.init_graphics()
+    app.start_match({"black": None, "white": "random", "time": None})
+    r, c = app.match.game.legal_actions()[0]
+    app.match.click((MARGIN + c * CELL + 5, MARGIN + r * CELL + 5))
+    assert app.match.last_move == (r, c) and len(app.match.last_flips) >= 1
+    assert app.game_view.move_sound is not None
+    # Kiểm tra vẽ các giai đoạn: đang đặt quân, chờ sóng lật, đang lật 3D, và đã lật xong
+    t0 = app.match.move_time
+    for dt in (0.02, 0.06, 0.15, 0.28, 0.60):
+        app.match.move_time = time.time() - dt
+        app.game_view.draw(app.match, (0, 0), app.to_menu)
+    app.match.move_time = t0
+    pygame.quit()

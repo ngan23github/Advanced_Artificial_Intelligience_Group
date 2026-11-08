@@ -9,6 +9,9 @@ BOARD_W = BOARD_PX + 2 * MARGIN
 PANEL_W = 300                            # bảng thông tin bên phải
 WIN_W, WIN_H = BOARD_W + PANEL_W, BOARD_W
 AGENT_DELAY = 1.0                        # giây; thời gian tối thiểu hiển thị mỗi nước của agent (để người xem kịp nhìn)
+PLACE_TIME = 0.22                        # giây; thời lượng hiệu ứng đặt quân cờ
+FLIP_TIME = 0.30                         # giây; thời lượng hiệu ứng lật mỗi quân cờ
+FLIP_WAVE = 0.06                         # giây; độ trễ lan truyền lật quân theo từng ô cách quân vừa đặt
 
 # ---------- màu ----------
 C_BG = (24, 26, 31)
