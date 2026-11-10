@@ -9,6 +9,7 @@ import time
 from agents.registry import build_agent_by_name, list_presets
 from othello.encoding import BLACK, WHITE, opponent
 from othello.game import OthelloGame
+from othello.rules import flips_for_move
 from ui.config import AGENT_DELAY, BOARD_PX, CELL, MARGIN, NAME
 
 
@@ -64,6 +65,8 @@ class Match:
                     pass
         self.game = OthelloGame()
         self.last_move = None
+        self.last_flips = []
+        self.move_time = 0.0
         self.msg = ""
         self.halted = False
         self.info = {BLACK: ("", ""), WHITE: ("", "")}
@@ -79,12 +82,18 @@ class Match:
         self.gen += 1
         self.game = replay(hist)
         self.last_move = self.game.move_history[-1][1] if self.game.move_history else None
+        self.last_flips = []
+        self.move_time = 0.0
         self.msg, self.halted = "", False
 
     def apply(self, action):
         mover = self.game.current_player
+        r, c = action
+        flips = flips_for_move(self.game.board, mover, r, c)
         self.game.step(action)
         self.last_move = tuple(action)
+        self.last_flips = flips
+        self.move_time = time.time()
         self.msg = ""
         if not self.game.is_terminal() and self.game.current_player == mover:
             self.msg = f"{NAME[opponent(mover)]} has no legal move: pass"
