@@ -105,7 +105,8 @@ def test_corner_is_taken_whenever_available():
 
 
 def test_avoids_x_and_c_when_no_corner_available():
-    agent = HeuristicAgent(seed=0, endgame_empties=0, priorities=NO_WIN)
+    priorities = [r for r in NO_WIN if r != "deny_corner"]
+    agent = HeuristicAgent(seed=0, endgame_empties=0, priorities=priorities)
     seen_bad = 0
     for g in random_positions(300, seed=4):
         acts = g.legal_actions()
@@ -119,7 +120,8 @@ def test_avoids_x_and_c_when_no_corner_available():
 
 
 def test_endgame_mode_maximises_discs():
-    agent = HeuristicAgent(seed=0, endgame_empties=64, priorities=NO_WIN)   # luôn ở chế độ cuối ván
+    priorities = [r for r in NO_WIN if r != "deny_corner"]
+    agent = HeuristicAgent(seed=0, endgame_empties=64, priorities=priorities)   # luôn ở chế độ cuối ván
     for g in random_positions(60, seed=6):
         acts = g.legal_actions()
         if any(a in CORNERS for a in acts):

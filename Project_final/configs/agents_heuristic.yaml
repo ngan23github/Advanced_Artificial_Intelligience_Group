@@ -20,6 +20,7 @@ weights:
 priorities:
   - "win_now"
   - "take_corner"
+  - "deny_corner"
   - "avoid_x_square"
   - "avoid_c_square"
   - "maximize_mobility"

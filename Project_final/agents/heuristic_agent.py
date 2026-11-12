@@ -37,16 +37,21 @@ class HeuristicAgent(Agent):
         priorities=None,
         endgame_empties: int = None,
         name: str = None,
-        config_file: str = "configs/agent_heuristic.yaml",
+        config_file: str = "configs/agents_heuristic.yaml",
         **kwargs
     ):
         super().__init__()
 
         # Đọc cấu hình từ YAML nếu tồn tại
         config = {}
-        if config_file and os.path.exists(config_file):
-            with open(config_file, "r", encoding="utf-8") as f:
-                config = yaml.safe_load(f) or {}
+        if config_file:
+            cfg_path = config_file
+            if not os.path.isabs(cfg_path) and not os.path.exists(cfg_path):
+                repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                cfg_path = os.path.join(repo_root, config_file)
+            if os.path.exists(cfg_path):
+                with open(cfg_path, "r", encoding="utf-8") as f:
+                    config = yaml.safe_load(f) or {}
 
         # Thứ tự ưu tiên: THAM SỐ TRUYỀN VÀO > YAML > mặc định (trước đây YAML đè tham số truyền vào)
         self.name = name if name is not None else config.get("name", "Heuristic")
