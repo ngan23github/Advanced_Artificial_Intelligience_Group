@@ -27,6 +27,7 @@ agents:
         depth: 4
         pruning: true
         move_ordering: true
+        weights: {mobility: 80.0, disc_diff: 5.0}   # chọn trên tập tune (seed 100), kiểm chứng seed 200: xem results/analysis/tune_search
         eval:
           disc_diff: true
           mobility: true
@@ -39,7 +40,7 @@ agents:
     params:
       simulations: 1000
       exploration_c: 1.414     # hằng số UCT
-      rollout_policy: random
+      rollout_policy: heuristic   # tune: rollout heuristic tốt hơn random (xem tune_summary.md)
 
   nn:
     type: nn

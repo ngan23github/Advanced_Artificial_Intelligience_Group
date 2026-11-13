@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from agents.alphabeta_agent import AlphaBetaAgent
+from Project_final.agents.alphabeta_agent1 import AlphaBetaAgent
 from agents.heuristic_agent import HeuristicAgent
 from agents.mcts_agent import MCTSAgent
 from agents.random_agent import RandomAgent
