@@ -1,4 +1,4 @@
-"""Hàm vẽ và âm thanh dùng chung: font, quân cờ (tĩnh, đặt quân, lật quân) và tiếng đặt cờ."""
+"""Hàm vẽ và âm thanh dùng chung: font, quân cờ 3D bóng bẩy (tĩnh, đặt quân, lật quân) và tiếng đặt cờ."""
 
 import math
 from pathlib import Path
@@ -31,18 +31,50 @@ class Fonts:
     """Tạo font một lần sau pygame.init() (SysFont cần pygame đã khởi tạo)."""
 
     def __init__(self):
-        names = "segoeui,arial,helvetica,dejavusans,freesans"
+        names = "segoeui,inter,arial,helvetica,dejavusans,freesans"
         mk = lambda size, bold=False: pygame.font.SysFont(names, size, bold=bold)
-        self.title, self.big = mk(48, True), mk(38, True)
-        self.h, self.body, self.bold, self.small = mk(22, True), mk(19), mk(19, True), mk(15)
+        self.title, self.big = mk(42, True), mk(34, True)
+        self.h, self.body, self.bold, self.small = mk(20, True), mk(17), mk(17, True), mk(14)
 
 
 def disc(surf, color, center, r):
-    """Vẽ hình tròn khử răng cưa (quân cờ, chấm nước hợp lệ, chấm nước vừa đi)."""
-    x, y = center
+    """Vẽ hình tròn khử răng cưa; nếu là quân cờ nguyên màu RGB (r >= 10) thì vẽ hiệu ứng 3D bóng khối."""
+    x, y = int(round(center[0])), int(round(center[1]))
     r = max(1, int(round(r)))
-    gfx.filled_circle(surf, x, y, r, color)
-    gfx.aacircle(surf, x, y, r, color)
+    if len(color) == 4 or r < 10:
+        gfx.filled_circle(surf, x, y, r, color)
+        gfx.aacircle(surf, x, y, r, color)
+        return
+
+    is_dark = (color[0] + color[1] + color[2]) < 380
+    if is_dark:
+        # Quân Đen: vành ngoài đen sâu, mặt trong ánh than chì + điểm phản quang góc trên trái
+        outer = (14, 16, 22)
+        inner = (34, 39, 48)
+        rim = (68, 76, 92)
+        shine = (95, 106, 125)
+    else:
+        # Quân Trắng: vành ngà ấm, mặt trong trắng sứ + điểm phản quang sáng
+        outer = (205, 212, 222)
+        inner = (246, 248, 252)
+        rim = (255, 255, 255)
+        shine = (255, 255, 255)
+
+    gfx.filled_circle(surf, x, y, r, outer)
+    gfx.aacircle(surf, x, y, r, outer)
+
+    ir = max(1, r - max(2, r // 8))
+    gfx.filled_circle(surf, x, y, ir, inner)
+    gfx.aacircle(surf, x, y, ir, rim)
+
+    # Ánh sáng phản chiếu (specular highlight) tạo độ nổi 3D
+    if r >= 14:
+        hx, hy = x - r // 4, y - r // 4
+        hr = max(2, r // 3)
+        gfx.filled_circle(surf, hx, hy, hr, shine if is_dark else (255, 255, 255))
+        gfx.aacircle(surf, hx, hy, hr, shine if is_dark else (255, 255, 255))
+        if is_dark:
+            gfx.filled_circle(surf, hx + 2, hy + 2, max(1, hr - 2), inner)
 
 
 def ellipse_disc(surf, color, center, rx, ry):
@@ -57,19 +89,17 @@ def draw_placed_disc(surf, color, ring_color, center, r, progress):
     """Hiệu ứng đặt quân cờ: rơi từ trên xuống + nảy nhẹ + vòng sóng lan tỏa."""
     cx, cy = center
     p = max(0.0, min(1.0, progress))
-    # Vòng sóng lan tỏa quanh ô vừa đặt
-    ring_r = int(round(r * (0.75 + 0.55 * p)))
-    alpha = int(190 * (1.0 - p) ** 1.5)
+    ring_r = int(round(r * (0.78 + 0.58 * p)))
+    alpha = int(200 * (1.0 - p) ** 1.5)
     if alpha > 5 and ring_r >= 1:
         gfx.aacircle(surf, cx, cy, ring_r, (*ring_color[:3], alpha))
         if ring_r > 1:
             gfx.aacircle(surf, cx, cy, ring_r - 1, (*ring_color[:3], alpha // 2))
-    # Quân cờ rơi nhẹ từ trên xuống kèm hiệu ứng thu phóng nảy (overshoot nhẹ)
     lift = int(round(10 * (1.0 - p) ** 2))
-    scale = 1.0 + 0.28 * (1.0 - p) * math.cos(p * math.pi * 1.4)
+    scale = 1.0 + 0.25 * (1.0 - p) * math.cos(p * math.pi * 1.4)
     cur_r = max(1, int(round(r * scale)))
     shadow_offset = 3 + lift // 2
-    disc(surf, (0, 0, 0, int(65 + 25 * p)), (cx + 2 + lift // 3, cy + shadow_offset), cur_r)
+    disc(surf, (0, 0, 0, int(75 + 25 * p)), (cx + 2 + lift // 3, cy + shadow_offset), cur_r)
     disc(surf, color, (cx, cy - lift), cur_r)
 
 
@@ -81,7 +111,6 @@ def draw_flipping_disc(surf, old_color, new_color, center, r, progress):
     cos_a = math.cos(angle)
     sin_a = math.sin(angle)
 
-    # Nửa đầu (p < 0.5) nhìn thấy mặt màu cũ, nửa sau (p >= 0.5) nhìn thấy mặt màu mới
     face_color = old_color if p < 0.5 else new_color
     edge_color = new_color if p < 0.5 else old_color
 
@@ -89,14 +118,10 @@ def draw_flipping_disc(surf, old_color, new_color, center, r, progress):
     ry = max(1, int(round(r * (1.0 + 0.10 * sin_a))))
     lift = int(round(6 * sin_a))
 
-    # Bóng đổ dưới mặt bàn (co giãn theo góc nghiêng của quân cờ)
-    shadow_alpha = int(80 - 25 * sin_a)
+    shadow_alpha = int(85 - 25 * sin_a)
     ellipse_disc(surf, (0, 0, 0, shadow_alpha), (cx + 2 + lift // 2, cy + 3 + lift // 2), max(2, rx), ry)
 
-    # Cạnh dày 3D của quân cờ khi đang nghiêng
     thickness = max(1, int(round(3 * sin_a)))
     side_dir = 1 if p < 0.5 else -1
     ellipse_disc(surf, edge_color, (cx + side_dir * thickness, cy - lift), rx, ry)
-
-    # Mặt chính của quân cờ
     ellipse_disc(surf, face_color, (cx, cy - lift), rx, ry)
