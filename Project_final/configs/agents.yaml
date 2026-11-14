@@ -27,6 +27,7 @@ agents:
         depth: 4
         pruning: true
         move_ordering: true
+        weights: {mobility: 80.0, disc_diff: 5.0}   # chọn trên tập tune (seed 100), kiểm chứng seed 200: xem results/analysis/tune_search
         eval:
           disc_diff: true
           mobility: true
@@ -39,7 +40,7 @@ agents:
     params:
       simulations: 1000
       exploration_c: 1.414     # hằng số UCT
-      rollout_policy: random
+      rollout_policy: heuristic   # tune: rollout heuristic tốt hơn random (xem tune_summary.md)
 
   nn:
     type: nn
@@ -62,22 +63,22 @@ agents:
       checkpoint: checkpoints/rl_selfplay_heuristic.pt       # phải trùng output của train_rl.yaml
 
   # ---- Biến thể cho ablation ----
-  alphabeta_nopruning:                   # ablation 1: bật/tắt cắt tỉa
-    type: alphabeta
-    params: {depth: 4, pruning: false}
-  mcts_100:
-    type: mcts
-    params: {simulations: 100}
-  mcts_500:
-    type: mcts
-    params: {simulations: 500}
-  mcts_5000:
-    type: mcts
-    params: {simulations: 5000}
-  alphabeta_discs_only:
-    type: alphabeta
-    params:
-      eval: {disc_diff: true, mobility: false, corners: false, x_c_squares: false, stability: false}
-  heuristic_discs_only:
-    type: heuristic
-    params: {priorities: [maximize_discs]}
+  # alphabeta_nopruning:                   # ablation 1: bật/tắt cắt tỉa
+  #   type: alphabeta
+  #   params: {depth: 4, pruning: false}
+  # mcts_100:
+  #   type: mcts
+  #   params: {simulations: 100}
+  # mcts_500:
+  #   type: mcts
+  #   params: {simulations: 500}
+  # mcts_5000:
+  #   type: mcts
+  #   params: {simulations: 5000}
+  # alphabeta_discs_only:
+  #   type: alphabeta
+  #   params:
+  #     eval: {disc_diff: true, mobility: false, corners: false, x_c_squares: false, stability: false}
+  # heuristic_discs_only:
+  #   type: heuristic
+  #   params: {priorities: [maximize_discs]}

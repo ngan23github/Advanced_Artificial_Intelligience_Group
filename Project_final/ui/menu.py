@@ -1,8 +1,12 @@
 """Màn hình menu: chọn chế độ, bên cầm quân, agent (lấy từ configs/agents.yaml qua registry) và thời gian mỗi nước."""
 
+import pygame
+
 from agents.registry import list_presets
 from othello.encoding import BLACK, WHITE, opponent
-from ui.config import (C_BG, C_DIM, C_ERR, C_TEXT, MODES, TIMES, WIN_H, WIN_W)
+from ui.config import (C_ACCENT, C_BG, C_BG_TOP, C_BORDER, C_CARD, C_DIM, C_DISC_B,
+                       C_DISC_W, C_ERR, C_GOLD, C_TEXT, MODES, TIMES, WIN_H, WIN_W)
+from ui.draw_utils import disc
 from ui.widgets import Button, Selector
 
 
@@ -43,46 +47,77 @@ class Menu:
     def layout(self):
         """Trả về (buttons, labels, selectors[(selector, rect)]) cho trạng thái hiện tại."""
         btns, labels, selectors = [], [], []
-        bw, gap = 260, 16
-        x0 = (WIN_W - (3 * bw + 2 * gap)) // 2
-        full = 3 * bw + 2 * gap                      # bề rộng vùng nội dung
-        labels.append(("Game mode", (x0, 112)))
+        full = 740
+        x0 = (WIN_W - full) // 2
+        gap = 16
+        bw2 = (full - gap) // 2
+
+        # 1. Chọn chế độ chơi
+        labels.append(("GAME MODE", (x0, 128)))
         for i, (name, key) in enumerate(MODES):
-            btns.append(Button((x0 + i * (bw + gap), 138, bw, 54), name,
-                               lambda k=key: setattr(self, "mode", k), selected=self.mode == key))
+            sub_txt = "Challenge an AI agent" if key == "hva" else "Watch two AI agents battle"
+            btns.append(Button((x0 + i * (bw2 + gap), 154, bw2, 56), name,
+                               lambda k=key: setattr(self, "mode", k), selected=self.mode == key, sub=sub_txt))
+
+        # 2. Chọn màu quân & Agent
         if self.mode == "hva":
-            labels.append(("You play as", (x0, 216)))
-            for i, (name, side) in enumerate([("Black (moves first)", BLACK), ("White", WHITE)]):
-                btns.append(Button((x0 + i * 236, 242, 220, 46), name,
+            labels.append(("YOUR SIDE", (x0, 232)))
+            for i, (name, side) in enumerate([("Black  (Moves First)", BLACK), ("White  (Moves Second)", WHITE)]):
+                btns.append(Button((x0 + i * (bw2 + gap), 258, bw2, 48), name,
                                    lambda s=side: setattr(self, "human_side", s), selected=self.human_side == side))
-            labels.append(("Opponent agent", (x0, 312)))
-            selectors.append((self.sel_opponent, (x0, 338, full, 70)))
+            labels.append(("AI OPPONENT", (x0, 328)))
+            selectors.append((self.sel_opponent, (x0, 354, full, 66)))
         else:
-            labels.append(("Black agent", (x0, 216)))
-            selectors.append((self.sel_black, (x0, 242, full, 70)))
-            labels.append(("White agent", (x0, 336)))
-            selectors.append((self.sel_white, (x0, 362, full, 70)))
+            labels.append(("BLACK AGENT  (MOVES FIRST)", (x0, 232)))
+            selectors.append((self.sel_black, (x0, 258, full, 64)))
+            labels.append(("WHITE AGENT  (MOVES SECOND)", (x0, 338)))
+            selectors.append((self.sel_white, (x0, 364, full, 64)))
+
         for sel, rect in selectors:
             btns += sel.buttons(rect)
 
-        labels.append(("Time per move", (x0, 456)))
+        # 3. Ngân sách thời gian mỗi nước
+        labels.append(("TIME BUDGET PER MOVE", (x0, 444)))
+        tw = (full - 4 * 12) // len(TIMES)
         for i, (name, _) in enumerate(TIMES):
-            btns.append(Button((x0 + i * 124, 482, 112, 40), name,
+            btns.append(Button((x0 + i * (tw + 12), 470, tw, 44), name,
                                lambda i=i: setattr(self, "time_idx", i), selected=self.time_idx == i))
-        btns.append(Button((WIN_W - 300, WIN_H - 50, 280, 40), "Start game", self.start, enabled=self.can_start()))
+
+        # 4. Nút Start Game nổi bật ở giữa dưới
+        btns.append(Button((x0, 540, full, 52), "START MATCH   (ENTER)", self.start,
+                           enabled=self.can_start(), primary=True))
         return btns, labels, selectors
 
     def draw(self, screen, fonts, mouse):
         screen.fill(C_BG)
-        screen.blit(fonts.title.render("OTHELLO", True, C_TEXT), (60, 28))
-        sub = self.error or ("Pick a mode and agents, then start." if self.can_start()
-                             else "Selected agent is not available (see message under its name).")
-        screen.blit(fonts.body.render(sub, True, C_ERR if self.error else C_DIM), (60, WIN_H - 40))
+        # Dải trang trí trên đầu màn hình
+        pygame.draw.rect(screen, C_BG_TOP, (0, 0, WIN_W, 96))
+        pygame.draw.line(screen, C_BORDER, (0, 96), (WIN_W, 96), 1)
+
+        # Khung thẻ lớn chính giữa chứa cài đặt trận đấu
+        card_rect = pygame.Rect((WIN_W - 804) // 2, 110, 804, 502)
+        pygame.draw.rect(screen, (8, 11, 16), card_rect.move(0, 4), border_radius=16)
+        pygame.draw.rect(screen, C_CARD, card_rect, border_radius=16)
+        pygame.draw.rect(screen, C_BORDER, card_rect, width=1, border_radius=16)
+
+        # Logo 2 quân cờ Đen/Trắng + Tiêu đề
+        cx = (WIN_W - 804) // 2 + 22
+        disc(screen, C_DISC_B, (cx, 48), 20)
+        disc(screen, C_DISC_W, (cx + 26, 48), 20)
+        title = fonts.title.render("OTHELLO", True, C_TEXT)
+        screen.blit(title, title.get_rect(midleft=(cx + 60, 48)))
+
         btns, labels, selectors = self.layout()
         for text, pos in labels:
-            screen.blit(fonts.h.render(text, True, C_TEXT), pos)
+            lbl = fonts.small.render(text, True, C_GOLD)
+            screen.blit(lbl, pos)
         for sel, rect in selectors:
             sel.draw(screen, fonts, rect)
         for b in btns:
             b.draw(screen, fonts, mouse)
+
+        sub = self.error or ("Ready to launch match  ·  Press Enter or click Start Match" if self.can_start()
+                             else "Selected agent is unavailable (check missing checkpoint message above).")
+        status_surf = fonts.small.render(sub, True, C_ERR if self.error else C_DIM)
+        screen.blit(status_surf, status_surf.get_rect(center=(WIN_W // 2, WIN_H - 15)))
         return btns

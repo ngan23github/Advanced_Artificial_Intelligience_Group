@@ -4,7 +4,7 @@
 Mỗi ván được đấu theo CẶP: cùng một khai cuộc ngẫu nhiên, đổi màu 2 lần -> giảm nhiễu do may rủi.
 Alpha-Beta/Heuristic gần như tất định nên BẮT BUỘC có khai cuộc ngẫu nhiên (--plies) mới ra các ván khác nhau.
 
-Đầu ra (trong --out, mặc định results/):
+Đầu ra (trong --out, mặc định results/logs/tune_search/; seed mặc định 100 để KHÔNG trùng seed đánh giá cuối 0-2):
     games.jsonl   nhật ký MỌI ván: cấu hình 2 bên, khai cuộc, từng nước (người đi, ô, thời gian, nodes, sims, số quân...)
     summary.csv   mỗi dòng 1 cấu hình: thắng/hòa/thua, win-rate + khoảng tin cậy 95% (Wilson), thời gian/nước, nodes, sims
     bench_raw.csv, bench_summary.csv   (lệnh bench) số nút + thời gian Alpha-Beta theo độ sâu / cắt tỉa
@@ -349,9 +349,9 @@ def main():
     def common(sp):
         sp.add_argument("--pairs", type=int, default=25, help="số cặp khai cuộc (mỗi cặp = 2 ván đổi màu)")
         sp.add_argument("--plies", type=int, default=6, help="số nước ngẫu nhiên mở đầu mỗi cặp")
-        sp.add_argument("--seed", type=int, default=0)
+        sp.add_argument("--seed", type=int, default=100, help="seed tập TUNE (>=100). Seed 0-2 dành cho đánh giá cuối, không dùng ở đây")
         sp.add_argument("--workers", type=int, default=1, help="số tiến trình song song (<= số nhân CPU - 1)")
-        sp.add_argument("--out", default="results")
+        sp.add_argument("--out", default="results/logs/tune_search")
 
     s = sub.add_parser("match"); common(s)
     s.add_argument("--a", required=True); s.add_argument("--b", required=True); s.add_argument("--tag")
@@ -369,7 +369,7 @@ def main():
     s.add_argument("--nopr-depth", type=int, default=4, help="độ sâu tối đa khi TẮT cắt tỉa (rất chậm nếu cao)")
     s.add_argument("--per-phase", type=int, default=5, help="số vị trí mỗi giai đoạn ván")
     s.add_argument("--base", help='JSON tham số thêm cho AlphaBetaAgent, vd {"weights":{"mobility":40}}')
-    s.add_argument("--seed", type=int, default=0); s.add_argument("--out", default="results")
+    s.add_argument("--seed", type=int, default=100); s.add_argument("--out", default="results/logs/tune_search")
     s.set_defaults(fn=cmd_bench)
 
     a = p.parse_args()

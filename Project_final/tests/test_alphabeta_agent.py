@@ -10,7 +10,7 @@ import random
 
 import numpy as np
 
-from agents.alphabeta_agent import AlphaBetaAgent, _evaluate_bb, evaluate_state
+from Project_final.agents.alphabeta_agent1 import AlphaBetaAgent, _evaluate_bb, evaluate_state
 from othello.bitboard import board_to_bb, bb_to_squares, flips_mask, legal_mask
 from othello.encoding import BLACK, WHITE
 from othello.game import OthelloGame
