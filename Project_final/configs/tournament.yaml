@@ -3,7 +3,7 @@
 # Chạy: python -m eval.tournament --config configs/tournament.yaml
 # Kết quả ghi vào <output_dir>/<run_name>/ (phải chưa tồn tại hoặc rỗng, để không ghi đè log thô).
 
-run_name: round_robin_v1       # đổi tên cho mỗi lần chạy chính thức (bỏ trống thì dùng run_<ngày_giờ>)
+run_name: round_robin_v2       # đổi tên cho mỗi lần chạy chính thức (bỏ trống thì dùng run_<ngày_giờ>)
 agents_config: configs/agents.yaml
 
 games_per_pair: 200            # tổng số ván MỖI CẶP, MỖI CHẾ ĐỘ NGÂN SÁCH. Phải chẵn
