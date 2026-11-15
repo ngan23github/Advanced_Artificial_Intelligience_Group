@@ -33,7 +33,7 @@ checkpoint_every: 999999       # lưu checkpoint định kỳ vào <checkpoint_d
 eval:                          # đường cong học tập: cứ định kỳ cho mạng đang train (argmax) đấu agent cố định
   every_episodes: 1000
   # ghi vào meta.json. `nn` = NN supervised: đường cong RL vs NN trả lời trực tiếp câu hỏi 3.
-  opponents: [random, heuristic, alphabeta, nn_alphabeta]
+  opponents: [random, heuristic, alphabeta, nn]
   games: 200
   seed_base: 900               # (MỚI) seed riêng của phần đánh giá khi train (không trùng seed tune 100-102, cuối 0-2)
 output:
