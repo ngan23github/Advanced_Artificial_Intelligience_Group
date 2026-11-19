@@ -16,4 +16,5 @@ data/*
 # !checkpoints/nn_supervised_heuristic.pt
 # !checkpoints/rl_selfplay_heuristic.pt
 
+results/logs/*
 *.zip
