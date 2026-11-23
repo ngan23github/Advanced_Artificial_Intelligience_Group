@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from Project_final.agents.alphabeta_agent1 import AlphaBetaAgent
+from agents.alphabeta_agent1 import AlphaBetaAgent
 from agents.heuristic_agent import HeuristicAgent
 from agents.mcts_agent import MCTSAgent
 from agents.random_agent import RandomAgent
@@ -29,7 +29,7 @@ try:
 
     from agents.nn_agent import NNAgent
     from agents.rl_agent import RLAgent
-    from models.nets import PolicyValueNet, save_checkpoint
+    from models.nets_v1 import PolicyValueNet, save_checkpoint
 
     _CKPT = Path(tempfile.mkdtemp()) / "tiny.pt"
     torch.manual_seed(0)

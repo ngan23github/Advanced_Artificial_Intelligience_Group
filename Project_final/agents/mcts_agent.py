@@ -17,6 +17,12 @@ Tham số (khớp configs/agents.yaml):
     simulations      số mô phỏng mỗi nước đi.
     exploration_c    hằng số UCT (mặc định ~ sqrt(2)).
     rollout_policy   "random" | "heuristic" (ưu tiên góc, tránh ô X/C, còn lại ngẫu nhiên).
+    leaf_eval        True: KHÔNG rollout; ở nút lá dùng hàm đánh giá tĩnh của Alpha-Beta (eval/evaluation.py), đổi thành
+                     xác suất thắng bằng sigmoid(điểm / eval_scale). Nút kết thúc ván vẫn dùng kết quả chính xác.
+                     Nhanh hơn rollout ~10 lần (số mô phỏng/giây) nhưng là MCTS LAI: dùng tri thức của Alpha-Beta.
+    eval_scale       K trong sigmoid(điểm / K) (chỉ khi leaf_eval). Nên tune (mcts_leaf_scale).
+    eval_weights     hệ số các thành phần hàm đánh giá (chỉ khi leaf_eval), cùng khóa với AlphaBetaAgent.weights.
+    eval_config      bật/tắt thành phần hàm đánh giá (chỉ khi leaf_eval), cùng khóa với AlphaBetaAgent.eval.
 time_budget: nếu được truyền thì DỪNG THEO GIỜ (95% ngân sách, bỏ qua `simulations`); không truyền thì chạy đúng
 `simulations` lần. Số mô phỏng thực tế luôn ghi vào stats()["simulations"].
 
@@ -107,6 +113,10 @@ class MCTSAgent(Agent):
         name: str = "MCTS",
         tree_depth: int = 2,
         tree_branch: int = 5,
+        leaf_eval: bool = False,
+        eval_scale: float = 100.0,
+        eval_weights: dict = None,
+        eval_config: dict = None,
         **kwargs
     ):
         super().__init__()
@@ -121,6 +131,16 @@ class MCTSAgent(Agent):
         self.simulations = int(simulations)
         self.c = float(exploration_c)
         self.rollout_policy = rollout_policy
+        self.leaf_eval = bool(leaf_eval)
+        self.eval_scale = float(eval_scale)
+        if self.leaf_eval:
+            if self.eval_scale <= 0:
+                raise ValueError("eval_scale phải > 0")
+            # import muộn: chỉ cần khi dùng leaf_eval (cùng hàm đánh giá bitboard với AlphaBetaAgent)
+            from eval.evaluation import _evaluate_bb, normalize_eval_config, normalize_weights
+            self._evaluate_bb = _evaluate_bb
+            self._eval_cfg = normalize_eval_config(eval_config)
+            self._eval_w = normalize_weights(eval_weights)
         self.name = name
         self.tree_depth = tree_depth      # độ sâu cây xuất cho UI (search_tree)
         self.tree_branch = tree_branch    # số nút con nhiều lượt thăm nhất giữ lại mỗi tầng
@@ -242,7 +262,10 @@ class MCTSAgent(Agent):
         return bits[self.rng.randrange(len(bits))]
 
     def _rollout(self, black: int, white: int, player, root_player) -> float:
-        """Đi đến hết ván, luật pass như engine. Trả về 1 / 0.5 / 0 theo góc nhìn root_player."""
+        """Đi đến hết ván, luật pass như engine. Trả về 1 / 0.5 / 0 theo góc nhìn root_player.
+        Nếu leaf_eval: không đi tiếp, trả về xác suất thắng ước lượng (0..1) từ hàm đánh giá tĩnh."""
+        if self.leaf_eval:
+            return self._leaf_value(black, white, player, root_player)
         if player is None:
             cur, p, o = BLACK, black, white     # ván đã kết thúc: chỉ cần đếm quân
         else:
@@ -262,6 +285,16 @@ class MCTSAgent(Agent):
         diff = (mine_black - mine_white) * root_player
         return 1.0 if diff > 0 else (0.0 if diff < 0 else 0.5)
 
+    def _leaf_value(self, black: int, white: int, player, root_player) -> float:
+        """Giá trị nút lá theo góc nhìn root_player trong [0, 1] (không rollout)."""
+        if player is None:                                  # ván đã kết thúc: kết quả chính xác
+            diff = (popcount(black) - popcount(white)) * root_player
+            return 1.0 if diff > 0 else (0.0 if diff < 0 else 0.5)
+        me, opp = (black, white) if root_player == BLACK else (white, black)
+        score = self._evaluate_bb(me, opp, self._eval_cfg, self._eval_w)
+        z = max(-50.0, min(50.0, score / self.eval_scale))   # chặn để exp không tràn
+        return 1.0 / (1.0 + math.exp(-z))
+
     # ---------- xuất cây cho UI (cùng định dạng với HeuristicAgent.search_tree) ----------
     def _export_tree(self, root, chosen_action, sims):
         def build(node, depth, is_root):
@@ -275,7 +308,7 @@ class MCTSAgent(Agent):
                 "value": round(rate, 3),
                 "caption": f"{sims} sims" if is_root else f"{node.visits}v {rate:.0%}",
                 "best": (not is_root) and depth == 1 and node.action == chosen_action,
-                "text": (f"MCTS: {sims} mô phỏng, c={self.c}, rollout={self.rollout_policy}" if is_root else
+                "text": (f"MCTS: {sims} mô phỏng, c={self.c}, " + (f"leaf_eval K={self.eval_scale:g}" if self.leaf_eval else f"rollout={self.rollout_policy}") if is_root else
                          f"visits={node.visits}  win-rate={rate:.1%} (góc nhìn người vừa đi)"),
                 "children": [build(ch, depth + 1, False) for ch in kids],
             }

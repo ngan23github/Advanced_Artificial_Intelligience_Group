@@ -22,35 +22,52 @@ agents:
       config_file: "configs/agents_heuristic.yaml"
 
   alphabeta:
-      type: alphabeta
-      params:
-        depth: 4
-        pruning: true
-        move_ordering: true
-        weights: {mobility: 80.0, disc_diff: 5.0}   # chọn trên tập tune (seed 100), kiểm chứng seed 200: xem results/analysis/tune_search
-        eval:
-          disc_diff: true
-          mobility: true
-          corners: true
-          x_c_squares: true
-          stability: false
+    type: alphabeta
+    params:
+      # Đã tune: xem results/analysis/tune_search/chosen_params.md
+      depth: 4                  # chỉ dùng khi KHÔNG có time_budget
+      pruning: true
+      move_ordering: true
+      weights: {mobility: 80.0, disc_diff: 5.0, corners: 100.0, x_c_squares: 1.0}
+      eval:
+        disc_diff: true
+        mobility: true
+        corners: true
+        x_c_squares: true
+        stability: false
 
   mcts:
     type: mcts
     params:
-      simulations: 1000
-      exploration_c: 1.414     # hằng số UCT
-      rollout_policy: heuristic   # tune: rollout heuristic tốt hơn random (xem tune_summary.md)
+      simulations: 2000        # chỉ dùng khi KHÔNG có time_budget
+      exploration_c: 1.414      # sqrt(2); tune chưa phân biệt được các giá trị c (chosen_params.md)
+      rollout_policy: heuristic # chọn từ tune mcts_rollout (chosen_params.md)
+
+  mcts_leaf:                    # MCTS LAI: đánh giá nút lá bằng hàm đánh giá Alpha-Beta, không rollout
+    type: mcts
+    params:
+      leaf_eval: true
+      eval_scale: 25.0          # K trong sigmoid(điểm/K), chọn từ tune mcts_leaf_scale (K=5..400)
+      eval_weights: {mobility: 80.0, disc_diff: 5.0}
+      exploration_c: 1.414      # tune chưa phân biệt được các giá trị c # tune: rollout heuristic tốt hơn random (xem tune_summary.md)
+      
+  mcts_leaf:
+    type: mcts
+    params:
+      leaf_eval: true
+      eval_scale: 25
+      eval_weights: {mobility: 80.0, disc_diff: 5.0}
+      exploration_c: 1.414   
 
   nn:
     type: nn
     params:
-      checkpoint: checkpoints/nn_supervised_alphabeta.pt
+      checkpoint: checkpoints/nn_supervised_alphabeta_v2.pt
 
   rl:
     type: rl
     params:
-      checkpoint: checkpoints/rl_selfplay_alphabeta.pt
+      checkpoint: checkpoints/rl_selfplay_alphabeta_v2.pt
 
   nn_heuristic:
     type: nn_heuristic

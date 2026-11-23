@@ -3,7 +3,7 @@
 # Chạy: python -m eval.tournament --config configs/tournament.yaml
 # Kết quả ghi vào <output_dir>/<run_name>/ (phải chưa tồn tại hoặc rỗng, để không ghi đè log thô).
 
-run_name: round_robin_v2       # đổi tên cho mỗi lần chạy chính thức (bỏ trống thì dùng run_<ngày_giờ>)
+run_name: round_robin_v3       # đổi tên cho mỗi lần chạy chính thức (bỏ trống thì dùng run_<ngày_giờ>)
 agents_config: configs/agents.yaml
 
 games_per_pair: 200            # tổng số ván MỖI CẶP, MỖI CHẾ ĐỘ NGÂN SÁCH. Phải chẵn
@@ -15,7 +15,7 @@ opening_plies: 4               # số nước đầu chọn ngẫu nhiên (có s
 workers: 1                     # số tiến trình song song; với agent tính theo thời gian để <= số lõi vật lý - 1
 
 # Danh sách mặc định dùng cho đánh giá; có thể ghi đè bằng cờ --agents.
-agents: [random, heuristic, alphabeta, mcts, nn, rl]
+agents: [random, heuristic, alphabeta, mcts, mcts_leaf, nn, rl]
 
 # Mỗi chế độ chạy lại TOÀN BỘ giải đấu với ngân sách khác nhau. (code đọc khóa `modes`, KHÔNG phải `budget_modes`)
 # time_budget: GIÂY/nước, truyền thẳng vào agent.select_action (API.md). null = cấu hình mặc định của agent.

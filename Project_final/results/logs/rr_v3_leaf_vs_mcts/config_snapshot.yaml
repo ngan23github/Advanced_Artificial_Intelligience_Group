@@ -1,0 +1,32 @@
+run_name: rr_v3_leaf_vs_mcts
+agents_config: configs/agents.yaml
+games_per_pair: 200
+swap_sides: true
+seeds:
+- 0
+- 1
+- 2
+opening_plies: 4
+workers: 1
+agents:
+- mcts_leaf
+- mcts
+modes:
+- name: time_per_move
+  time_budget: 0.5
+- name: default_config
+  time_budget: null
+metrics:
+- win_draw_loss
+- score
+- avg_time_per_move
+- latency_p95
+- nodes_or_simulations
+- memory
+confidence_interval: wilson
+ablations:
+- alphabeta_pruning_on_off
+- mcts_num_simulations
+- heuristic_components_on_off
+output_dir: results/logs/
+figure_dir: results/figures/

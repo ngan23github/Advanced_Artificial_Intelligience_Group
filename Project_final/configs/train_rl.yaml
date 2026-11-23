@@ -6,8 +6,13 @@ reward:
   win: 1.0                     # phải trùng game.yaml (có test kiểm tra). Reward chỉ phát ở CUỐI ván.
   draw: 0.0
   loss: -1.0
-episodes: 20000                # số ván self-play. Nếu máy chậm: giảm và ghi trung thực số ván đã train vào báo cáo
-init_from: checkpoints/nn_supervised_alphabeta.pt   # (MỚI) khởi tạo từ NN supervised để so RL vs bắt chước (câu hỏi 3). Dùng --from-scratch để bỏ.
+episodes: 30000             # số ván self-play. Nếu máy chậm: giảm và ghi trung thực số ván đã train vào báo cáo
+init_from: checkpoints/nn_supervised_alphabeta_v2.pt   # (MỚI) khởi tạo từ NN supervised để so RL vs bắt chước (câu hỏi 3). Dùng --from-scratch để bỏ.
+opponent_mix:
+  - {agent: heuristic, weight: 0.2}
+  - {agent: alphabeta, params: {depth: 2}, weight: 0.3}
+shaping: 
+  margin_coef: 0.3               # hưởng thêm margin_coef * (chênh lệch quân cuối ván / 64) theo góc nhìn người đi; 0 = như v1
 exploration:
   # Khám phá đến từ việc LẤY MẪU theo phân phối chính sách + entropy bonus (đã đổi từ epsilon-greedy cho nhất quán
   # với policy gradient; epsilon-greedy chỉ hợp với phương pháp dựa trên giá trị như DQN).
@@ -21,6 +26,7 @@ model:                         # chỉ dùng khi --from-scratch; nếu nạp ini
   policy_outputs: 64           # khớp action_to_index
   channels: 64
   hidden: 128
+  num_res_blocks: 2             # số khối ResBlock (tăng độ sâu mạng, tăng khả năng học)
 train:
   lr: 0.0005
   gamma: 1.0                   # chiết khấu (1.0 = return chính là reward cuối ván)
@@ -31,12 +37,12 @@ train:
   device: auto
 checkpoint_every: 999999       # lưu checkpoint định kỳ vào <checkpoint_dir>/rl_periodic/
 eval:                          # đường cong học tập: cứ định kỳ cho mạng đang train (argmax) đấu agent cố định
-  every_episodes: 1000
+  every_episodes: 2500
   # ghi vào meta.json. `nn` = NN supervised: đường cong RL vs NN trả lời trực tiếp câu hỏi 3.
   opponents: [random, heuristic, alphabeta, nn]
   games: 200
   seed_base: 900               # (MỚI) seed riêng của phần đánh giá khi train (không trùng seed tune 100-102, cuối 0-2)
 output:
   checkpoint_dir: checkpoints/
-  checkpoint_name: rl_selfplay_alphabeta.pt     # checkpoint_dir + checkpoint_name phải trùng rl.checkpoint trong agents.yaml
-  log_dir: results/logs/train_rl_alphabeta/
+  checkpoint_name: rl_selfplay_alphabeta_v2.pt     # checkpoint_dir + checkpoint_name phải trùng rl.checkpoint trong agents.yaml
+  log_dir: results/logs/train_rl_alphabeta_v2/

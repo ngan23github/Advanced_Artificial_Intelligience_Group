@@ -1,0 +1,26 @@
+mcts_leaf:
+  type: mcts
+  params:
+    leaf_eval: true
+    eval_scale: 25
+    eval_weights:
+      mobility: 80.0
+      disc_diff: 5.0
+    exploration_c: 1.414
+alphabeta:
+  type: alphabeta
+  params:
+    depth: 4
+    pruning: true
+    move_ordering: true
+    weights:
+      mobility: 80.0
+      disc_diff: 5.0
+      corners: 100.0
+      x_c_squares: 1.0
+    eval:
+      disc_diff: true
+      mobility: true
+      corners: true
+      x_c_squares: true
+      stability: false

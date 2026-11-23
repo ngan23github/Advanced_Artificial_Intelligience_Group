@@ -6,7 +6,9 @@ Ra  : (policy_logits (B, 64), value (B,)) với value trong (-1, 1) (tanh), cũn
       Policy là logit THÔ cho cả 64 ô; nước bất hợp lệ phải được che bằng `masked_logits` trước khi
       softmax/argmax (ở cả lúc train lẫn lúc chọn nước).
 
-Chạy được hoàn toàn trên CPU (khoảng 158k tham số với cấu hình mặc định channels=64, hidden=128).
+Chạy được hoàn toàn trên CPU (khoảng 158k tham số với cấu hình mặc định channels=64, hidden=128, num_res_blocks=0).
+`num_res_blocks` > 0 thêm các khối residual (mỗi khối 2 lớp 3x3) sau thân 3 lớp: tăng vùng nhìn (3 lớp chỉ thấy 7x7, thêm 2 khối
+thì thấy cả bàn 8x8 từ mọi ô) và sức chứa. Checkpoint cũ (không có khóa này) vẫn nạp được vì mặc định là 0.
 """
 
 from pathlib import Path
@@ -21,21 +23,35 @@ from othello.encoding import BOARD_SIZE, action_to_index, encode_planes
 NEG_INF = -1e9  # logit của ô bất hợp lệ sau khi che (đủ nhỏ để softmax ~ 0, nhưng không gây NaN)
 
 
+class _ResBlock(nn.Module):
+    """h -> relu(h + conv(relu(conv(h)))), giữ nguyên kích thước 8x8 và số kênh."""
+
+    def __init__(self, channels: int):
+        super().__init__()
+        self.c1 = nn.Conv2d(channels, channels, 3, padding=1)
+        self.c2 = nn.Conv2d(channels, channels, 3, padding=1)
+
+    def forward(self, x: torch.Tensor):
+        return F.relu(x + self.c2(F.relu(self.c1(x))))
+
+
 class PolicyValueNet(nn.Module):
     """CNN 3 lớp tích chập 3x3 (giữ nguyên 8x8) + 2 đầu: policy (64 logit) và value (tanh)."""
 
-    def __init__(self, input_planes: int = 2, policy_outputs: int = 64, channels: int = 64, hidden: int = 128):
+    def __init__(self, input_planes: int = 2, policy_outputs: int = 64, channels: int = 64, hidden: int = 128,
+                 num_res_blocks: int = 0):
         super().__init__()
         if policy_outputs != BOARD_SIZE * BOARD_SIZE:
             raise ValueError("policy_outputs phải là 64 để khớp action_to_index")
         self.config = {
             "input_planes": input_planes, "policy_outputs": policy_outputs,
-            "channels": channels, "hidden": hidden,
+            "channels": channels, "hidden": hidden, "num_res_blocks": int(num_res_blocks),
         }
         # thân chung: trích đặc trưng không gian
         self.conv1 = nn.Conv2d(input_planes, channels, 3, padding=1)
         self.conv2 = nn.Conv2d(channels, channels, 3, padding=1)
         self.conv3 = nn.Conv2d(channels, channels, 3, padding=1)
+        self.res_blocks = nn.ModuleList([_ResBlock(channels) for _ in range(int(num_res_blocks))])
         # đầu policy: nén kênh (1x1) rồi tuyến tính ra 64 logit
         self.policy_conv = nn.Conv2d(channels, 4, 1)
         self.policy_fc = nn.Linear(4 * BOARD_SIZE * BOARD_SIZE, policy_outputs)
@@ -49,6 +65,8 @@ class PolicyValueNet(nn.Module):
         h = F.relu(self.conv1(x))
         h = F.relu(self.conv2(h))
         h = F.relu(self.conv3(h))
+        for blk in self.res_blocks:
+            h = blk(h)
         p = F.relu(self.policy_conv(h)).flatten(1)
         logits = self.policy_fc(p)
         v = F.relu(self.value_conv(h)).flatten(1)
@@ -63,6 +81,7 @@ def build_model(model_cfg: dict) -> PolicyValueNet:
         policy_outputs=int(model_cfg.get("policy_outputs", 64)),
         channels=int(model_cfg.get("channels", 64)),
         hidden=int(model_cfg.get("hidden", 128)),
+        num_res_blocks=int(model_cfg.get("num_res_blocks", 0)),
     )
 
 

@@ -17,7 +17,7 @@ from othello.encoding import BLACK, WHITE  # noqa: E402
 def agents_cfg(tmp_path):
     """agents.yaml tạm: random + nn/rl trỏ tới checkpoint nhỏ chưa train (có `torch`) + 1 mục thiếu checkpoint."""
     torch = pytest.importorskip("torch")
-    from models.nets import PolicyValueNet, save_checkpoint
+    from Project_final.models.nets_v1 import PolicyValueNet, save_checkpoint
     torch.manual_seed(0)
     save_checkpoint(tmp_path / "tiny.pt", PolicyValueNet(channels=8, hidden=16))
     cfg = {"agents": {

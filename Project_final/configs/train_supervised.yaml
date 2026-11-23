@@ -12,23 +12,25 @@ data:
   dedupe: true
   split_by_game: true          # chia THEO VÁN, không chia theo từng nước
   split: {train: 0.8, val: 0.1, test: 0.1}   # tổng phải = 1 (có test kiểm tra)
-  output_dir: data/supervised_alphabeta_v1   # nơi train.generate_data ghi và train.train_supervised đọc
+  output_dir: data/supervised_alphabeta_v2   # nơi train.generate_data ghi và train.train_supervised đọc
 model:
   type: policy_value           # policy, value hoặc cả hai
   input_planes: 2              # khớp othello.encoding.encode_planes: 2 kênh (quân mình, quân đối thủ), 8x8
   policy_outputs: 64           # khớp action_to_index: 64 ô; nước không hợp lệ bị che khi train và khi chọn nước
-  channels: 64                 # số kênh 3 lớp tích chập 3x3 (CNN nhỏ, chạy được trên CPU)
+  channels: 128                # số kênh 3 lớp tích chập 3x3 (CNN nhỏ, chạy được trên CPU)
   hidden: 128                  # kích thước lớp ẩn của đầu value
+  num_res_blocks: 4             # số khối ResBlock (tăng độ sâu mạng, tăng khả năng học)
 train:
-  epochs: 30
+  epochs: 80
   batch_size: 256
   lr: 0.001
   optimizer: adam
+  lr_scheduler: cosine
   weight_decay: 0.0            
   value_loss_weight: 1.0       # loss = CE(policy) + value_loss_weight * MSE(value)
   augment_symmetry: true       # tăng cường bằng 8 phép đối xứng bàn cờ, CHỈ áp lên tập train (sau khi đã chia ván)
   device: auto                 # auto = cuda nếu có, không thì cpu
 output:
   checkpoint_dir: checkpoints/
-  checkpoint_name: nn_supervised_alphabeta.pt   # checkpoint_dir + checkpoint_name phải trùng nn.checkpoint trong agents.yaml
-  log_dir: results/logs/train_supervised_alphabeta/
+  checkpoint_name: nn_supervised_alphabeta_v2.pt   # checkpoint_dir + checkpoint_name phải trùng nn.checkpoint trong agents.yaml
+  log_dir: results/logs/train_supervised_alphabeta_v2/

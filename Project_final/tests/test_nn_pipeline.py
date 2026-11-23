@@ -15,7 +15,7 @@ import pytest
 torch = pytest.importorskip("torch")
 
 from agents.nn_agent import NNAgent  # noqa: E402
-from models.nets import (NEG_INF, PolicyValueNet, game_to_tensor, legal_mask_from_actions,  # noqa: E402
+from Project_final.models.nets_v1 import (NEG_INF, PolicyValueNet, game_to_tensor, legal_mask_from_actions,  # noqa: E402
                          load_checkpoint, masked_logits, save_checkpoint)
 from othello.encoding import BLACK, encode_planes  # noqa: E402
 from othello.game import OthelloGame  # noqa: E402

@@ -9,6 +9,7 @@ Chạy:
     move_stats.csv          mỗi (chế độ, agent, giai đoạn): ms/nước, p95, nodes, simulations, độ sâu, lấy góc, tặng góc, đi ô X/C
     corner_vs_result.csv    ai lấy góc đầu tiên có thắng không; chênh mobility ở nước 20 có tiên đoán kết quả không
     mcts_calibration.csv    giá trị thắng MCTS ước lượng so với kết quả thật (nếu log có stats.value)
+    mcts_calibration_by_opponent.csv   như trên nhưng TÁCH theo đối thủ và giai đoạn (+ Brier, AUC)
     selected_games.md       các ván được chọn THEO QUY TẮC CỐ ĐỊNH (xem QUY_TAC_CHON_VAN), kèm bàn cờ tại nước 20/40/cuối
     fig_*.png               hình sinh từ chính các bảng trên
 
@@ -209,6 +210,29 @@ def mcts_calibration(moves: pd.DataFrame, games: pd.DataFrame) -> pd.DataFrame:
     return out.round(3)
 
 
+def mcts_calibration_by(moves: pd.DataFrame, games: pd.DataFrame) -> pd.DataFrame:
+    """Hiệu chỉnh của MCTS TÁCH theo (đối thủ, giai đoạn): est = giá trị MCTS tự ước lượng, actual = tỷ lệ thắng thật.
+    Bảng gộp mọi đối thủ (mcts_calibration) có thể trông 'chuẩn' chỉ vì trộn ván đấu Random (thắng 100%) với ván đấu
+    Alpha-Beta (thắng rất ít); bảng này để lộ sai lệch đó. Chỉ tính nước có simulations > 0 (bỏ nước bắt buộc 1 lựa chọn)."""
+    m = moves[moves["value"].notna() & moves["simulations"].gt(0)].merge(games[["game_id", "result_black"]], on="game_id")
+    if m.empty:
+        return pd.DataFrame()
+    m = m.assign(outcome=(m["result_black"] * m["p"] + 1) / 2)
+    rows = []
+    for (opp, phase), d in m.groupby(["opponent", "phase"]):
+        dec = d[d["outcome"] != 0.5]
+        auc = np.nan
+        if dec["outcome"].nunique() == 2:                       # AUC: giá trị MCTS có xếp hạng đúng thắng/thua không
+            r = dec["value"].rank().to_numpy()
+            y = (dec["outcome"] == 1).to_numpy()
+            n1, n0 = int(y.sum()), int((~y).sum())
+            auc = (r[y].sum() - n1 * (n1 + 1) / 2) / (n1 * n0)
+        rows.append({"opponent": opp, "phase": phase, "moves": len(d), "est": d["value"].mean(),
+                     "actual": d["outcome"].mean(), "bias": d["value"].mean() - d["outcome"].mean(),
+                     "brier": float(((d["value"] - d["outcome"]) ** 2).mean()), "auc": auc})
+    return pd.DataFrame(rows).round(3)
+
+
 # ------------------------------------------------------------------ chọn ván theo quy tắc
 def select_games(games: pd.DataFrame, focus) -> pd.DataFrame:
     rng = random.Random(SEED_CHON_VAN)
@@ -266,7 +290,7 @@ def write_selected_md(path, selected: pd.DataFrame, recs_by_id: dict):
 
 
 # ------------------------------------------------------------------ hình
-def make_figures(out: Path, summary, mstats, games, moves, calib):
+def make_figures(out: Path, summary, mstats, games, moves, calib, calib_by=None, agents=None):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -306,20 +330,26 @@ def make_figures(out: Path, summary, mstats, games, moves, calib):
         fig.savefig(out / "fig_cost_by_phase.png", dpi=150)
         plt.close(fig)
 
-        # 3) lấy góc / tặng góc
-        agg = moves.groupby(["mode", "agent"]).agg(
+        # 3) lấy góc / tặng góc: mỗi chế độ 1 panel, chỉ các agent trong `agents` (mặc định: tất cả)
+        mv = moves if not agents else moves[moves["agent"].isin(agents)]
+        agg = mv.groupby(["mode", "agent"]).agg(
             gave=("gave_corner", "mean"), xc=("danger", lambda s: float((s > 0).mean()))).reset_index()
-        avail = moves[moves["corner_available"]].groupby(["mode", "agent"])["took_corner"].mean().rename("took")
+        avail = mv[mv["corner_available"]].groupby(["mode", "agent"])["took_corner"].mean().rename("took")
         agg = agg.merge(avail.reset_index(), on=["mode", "agent"], how="left")
-        fig, ax = plt.subplots(figsize=(9, 4))
-        x = np.arange(len(agg))
-        ax.bar(x - 0.27, agg["took"].fillna(0), 0.27, label="lấy góc khi có thể")
-        ax.bar(x, agg["gave"], 0.27, label="tặng góc cho đối thủ / nước")
-        ax.bar(x + 0.27, agg["xc"], 0.27, label="đi ô X/C khi góc còn trống / nước")
-        ax.set_xticks(x, agg["agent"] + "\n" + agg["mode"], fontsize=7)
-        ax.legend(fontsize=7)
+        modes = sorted(agg["mode"].unique())
+        fig, axes = plt.subplots(1, len(modes), figsize=(5.2 * len(modes), 4), sharey=True, squeeze=False)
+        for ax, mode in zip(axes[0], modes):
+            d = agg[agg["mode"] == mode].reset_index(drop=True)
+            x = np.arange(len(d))
+            ax.bar(x - 0.27, d["took"].fillna(0), 0.27, label="lấy góc khi có thể")
+            ax.bar(x, d["gave"], 0.27, label="tặng góc cho đối thủ / nước")
+            ax.bar(x + 0.27, d["xc"], 0.27, label="đi ô X/C khi góc còn trống / nước")
+            ax.set_xticks(x, d["agent"])
+            ax.set_title(mode, fontsize=9)
+            ax.set_ylim(0, 1.05)
+        axes[0][0].legend(fontsize=7, loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=1)
         fig.tight_layout()
-        fig.savefig(out / "fig_corner_behaviour.png", dpi=150)
+        fig.savefig(out / "fig_corner_behaviour.png", dpi=150, bbox_inches="tight")
         plt.close(fig)
 
     # 4) quỹ đạo chênh lệch quân của agent đứng trước (a), tách thắng / hòa / thua (KHÔNG chỉ ván thắng)
@@ -345,22 +375,30 @@ def make_figures(out: Path, summary, mstats, games, moves, calib):
         fig.savefig(out / f"fig_trajectory_{mode}_{a}_vs_{b}.png", dpi=130)
         plt.close(fig)
 
-    # 5) hiệu chỉnh ước lượng thắng của MCTS
+    # 5) hiệu chỉnh ước lượng thắng của MCTS: gộp (đường đen) và TÁCH theo đối thủ
     if calib is not None and not calib.empty:
-        fig, ax = plt.subplots(figsize=(4.5, 4.5))
+        fig, ax = plt.subplots(figsize=(5.2, 5))
         for agent, d in calib.groupby("agent"):
-            ax.plot(d["est"], d["actual"], marker="o", label=f"{agent} (Brier {d['brier_agent'].iloc[0]:.3f})")
+            ax.plot(d["est"], d["actual"], marker="o", color="k", lw=2, label=f"{agent}, gộp mọi đối thủ (Brier {d['brier_agent'].iloc[0]:.3f})")
+        if "opponent" in moves.columns:
+            m = moves[moves["value"].notna() & moves["simulations"].gt(0)].merge(games[["game_id", "result_black"]], on="game_id")
+            m = m.assign(outcome=(m["result_black"] * m["p"] + 1) / 2)
+            m = m.assign(bin=pd.cut(m["value"], [0, .2, .4, .6, .8, 1.0], include_lowest=True))
+            for opp, d in m.groupby("opponent"):
+                t = d.groupby("bin", observed=True).agg(n=("value", "size"), est=("value", "mean"), actual=("outcome", "mean"))
+                t = t[t["n"] >= 30]
+                ax.plot(t["est"], t["actual"], marker=".", lw=1, label=f"đấu {opp}")
         ax.plot([0, 1], [0, 1], "k--", lw=0.8)
         ax.set_xlabel("tỷ lệ thắng MCTS ước lượng")
         ax.set_ylabel("tỷ lệ thắng thực tế")
-        ax.legend(fontsize=7)
+        ax.legend(fontsize=6.5)
         fig.tight_layout()
         fig.savefig(out / "fig_mcts_calibration.png", dpi=150)
         plt.close(fig)
 
 
 # ------------------------------------------------------------------ điều phối
-def analyze(run_dir, out_dir, focus=None) -> dict:
+def analyze(run_dir, out_dir, focus=None, agents=None) -> dict:
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     recs = load_games(run_dir)
@@ -368,6 +406,7 @@ def analyze(run_dir, out_dir, focus=None) -> dict:
     games, moves = t["games"], t["moves"]
     summary, mstats = matchup_summary(games), move_stats(moves)
     cvr, calib = corner_vs_result(games), mcts_calibration(moves, games)
+    calib_by = mcts_calibration_by(moves, games)
     selected = select_games(games, focus)
 
     summary.to_csv(out / "matchup_summary.csv", index=False)
@@ -375,10 +414,11 @@ def analyze(run_dir, out_dir, focus=None) -> dict:
     cvr.to_csv(out / "corner_vs_result.csv", index=False)
     if not calib.empty:
         calib.to_csv(out / "mcts_calibration.csv", index=False)
+        calib_by.to_csv(out / "mcts_calibration_by_opponent.csv", index=False)
     selected.to_csv(out / "selected_games.csv", index=False)
     write_selected_md(out / "selected_games.md", selected, {r["game_id"]: r for r in recs})
-    make_figures(out, summary, mstats, games, moves, calib)
-    return {"summary": summary, "move_stats": mstats, "corner_vs_result": cvr, "calibration": calib,
+    make_figures(out, summary, mstats, games, moves, calib, calib_by, agents)
+    return {"summary": summary, "move_stats": mstats, "corner_vs_result": cvr, "calibration": calib, "calibration_by": calib_by,
             "selected": selected, "games": games, "moves": moves, "n_games": len(recs)}
 
 

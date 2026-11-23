@@ -1,0 +1,15 @@
+mcts_leaf:
+  type: mcts
+  params:
+    leaf_eval: true
+    eval_scale: 25
+    eval_weights:
+      mobility: 80.0
+      disc_diff: 5.0
+    exploration_c: 1.414
+mcts:
+  type: mcts
+  params:
+    simulations: 1000
+    exploration_c: 1.414
+    rollout_policy: heuristic

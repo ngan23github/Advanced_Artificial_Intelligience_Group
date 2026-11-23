@@ -2,20 +2,6 @@
 name: "Heuristic-Weighted"
 endgame_empties: 10          # Số ô trống còn lại để chuyển sang giai đoạn tàn cuộc (Endgame)
 
-# Bảng trọng số các thành phần đánh giá chiến thuật
-weights:
-  # Giai đoạn đầu và giữa ván (Early / Mid game)
-  early_position: 10.0       # Trọng số vị trí bàn cờ
-  early_corner: 800.0        # Trọng số kiểm soát góc
-  early_mobility: 78.0       # Trọng số độ cơ động
-  early_coin: 10.0           # Trọng số chênh lệch quân cờ
-
-  # Giai đoạn tàn cuộc (Endgame)
-  late_position: 10.0
-  late_corner: 1000.0
-  late_corner_mobility: 20.0
-  late_coin: 500.0
-
 # Thứ tự ưu tiên các luật
 priorities:
   - "win_now"
@@ -25,3 +11,4 @@ priorities:
   - "avoid_c_square"
   - "maximize_mobility"
   - "maximize_discs"
+  
