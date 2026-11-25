@@ -45,7 +45,7 @@ AGENT_CLASSES = {
 
 # Nhãn hiển thị (UI) cho mục có tên trùng `type`; mục biến thể (mcts_100...) hiển thị bằng chính tên mục.
 AGENT_LABELS = {
-    "random": "Random", "heuristic": "Heuristic", "alphabeta": "Alpha-Beta", "mcts": "MCTS",
+    "random": "Random", "heuristic": "Heuristic", "alphabeta": "Alpha-Beta", "mcts": "MCTS",  "mcts_leaf": "MCTS (Leaf)",
     "nn": "NN", "rl": "RL",
     "nn_heuristic": "NN (Heuristic)", "rl_heuristic": "RL (Heuristic)",
 }
@@ -136,10 +136,13 @@ class Preset:
 
 
 def list_presets(agents_config=None) -> list:
-    """Mọi mục trong agents.yaml dưới dạng Preset, đúng thứ tự trong file. UI chọn agent từ danh sách này."""
+    """Mọi mục trong agents.yaml dưới dạng Preset, đúng thứ tự trong file."""
     out = []
     for name, spec in load_agent_specs(agents_config).items():
         ok, reason = check_spec(spec)
-        label = AGENT_LABELS.get(spec["type"], spec["type"]) if name == spec["type"] else name
+
+        label = AGENT_LABELS.get(name, name)
+
         out.append(Preset(name, label, spec, ok, reason))
+
     return out
