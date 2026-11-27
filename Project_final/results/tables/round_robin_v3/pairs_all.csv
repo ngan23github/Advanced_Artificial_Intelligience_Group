@@ -1,0 +1,43 @@
+﻿Mode,Agent A,Agent B,W - D - L (A),Score A,Wilson 95% CI,Pair-Bootstrap 95% CI,Score A (Black),Score A (White)
+time_per_move,Random (C1),Heuristic (C2),1 - 2 - 197,0.01,"[0.003, 0.036]","[0.000, 0.025]",0.015,0.005
+time_per_move,Random (C1),Alpha-Beta (C3),0 - 0 - 200,0.0,"[0.000, 0.019]","[0.000, 0.000]",0.0,0.0
+time_per_move,Random (C1),MCTS (C4),1 - 0 - 199,0.005,"[0.001, 0.028]","[0.000, 0.015]",0.0,0.01
+time_per_move,Random (C1),MCTS-leaf (C4b),0 - 0 - 200,0.0,"[0.000, 0.019]","[0.000, 0.000]",0.0,0.0
+time_per_move,Random (C1),NN Sup (C5),4 - 0 - 196,0.02,"[0.008, 0.050]","[0.005, 0.040]",0.0,0.04
+time_per_move,Random (C1),RL Self-Play (C6),2 - 0 - 198,0.01,"[0.003, 0.036]","[0.000, 0.025]",0.01,0.01
+time_per_move,Heuristic (C2),Alpha-Beta (C3),2 - 0 - 198,0.01,"[0.003, 0.036]","[0.000, 0.025]",0.01,0.01
+time_per_move,Heuristic (C2),MCTS (C4),50 - 6 - 144,0.265,"[0.209, 0.330]","[0.205, 0.328]",0.22,0.31
+time_per_move,Heuristic (C2),MCTS-leaf (C4b),5 - 2 - 193,0.03,"[0.014, 0.064]","[0.010, 0.055]",0.035,0.025
+time_per_move,Heuristic (C2),NN Sup (C5),62 - 3 - 135,0.3175,"[0.257, 0.385]","[0.255, 0.380]",0.305,0.33
+time_per_move,Heuristic (C2),RL Self-Play (C6),41 - 2 - 157,0.21,"[0.159, 0.272]","[0.152, 0.270]",0.22,0.2
+time_per_move,Alpha-Beta (C3),MCTS (C4),195 - 0 - 5,0.975,"[0.943, 0.989]","[0.955, 0.995]",0.97,0.98
+time_per_move,Alpha-Beta (C3),MCTS-leaf (C4b),161 - 5 - 34,0.8175,"[0.758, 0.865]","[0.762, 0.870]",0.795,0.84
+time_per_move,Alpha-Beta (C3),NN Sup (C5),194 - 4 - 2,0.98,"[0.950, 0.992]","[0.963, 0.995]",0.98,0.98
+time_per_move,Alpha-Beta (C3),RL Self-Play (C6),191 - 0 - 9,0.955,"[0.917, 0.976]","[0.925, 0.980]",0.97,0.94
+time_per_move,MCTS (C4),MCTS-leaf (C4b),45 - 2 - 153,0.23,"[0.177, 0.293]","[0.175, 0.292]",0.195,0.265
+time_per_move,MCTS (C4),NN Sup (C5),91 - 2 - 107,0.46,"[0.392, 0.529]","[0.388, 0.532]",0.425,0.495
+time_per_move,MCTS (C4),RL Self-Play (C6),81 - 6 - 113,0.42,"[0.354, 0.489]","[0.347, 0.492]",0.48,0.36
+time_per_move,MCTS-leaf (C4b),NN Sup (C5),168 - 5 - 27,0.8525,"[0.797, 0.895]","[0.802, 0.900]",0.85,0.855
+time_per_move,MCTS-leaf (C4b),RL Self-Play (C6),180 - 1 - 19,0.9025,"[0.853, 0.936]","[0.863, 0.943]",0.88,0.925
+time_per_move,NN Sup (C5),RL Self-Play (C6),104 - 9 - 87,0.5425,"[0.473, 0.610]","[0.477, 0.608]",0.465,0.62
+default_config,Random (C1),Heuristic (C2),1 - 2 - 197,0.01,"[0.003, 0.036]","[0.000, 0.025]",0.015,0.005
+default_config,Random (C1),Alpha-Beta (C3),0 - 0 - 200,0.0,"[0.000, 0.019]","[0.000, 0.000]",0.0,0.0
+default_config,Random (C1),MCTS (C4),0 - 0 - 200,0.0,"[0.000, 0.019]","[0.000, 0.000]",0.0,0.0
+default_config,Random (C1),MCTS-leaf (C4b),2 - 0 - 198,0.01,"[0.003, 0.036]","[0.000, 0.025]",0.01,0.01
+default_config,Random (C1),NN Sup (C5),4 - 0 - 196,0.02,"[0.008, 0.050]","[0.005, 0.040]",0.0,0.04
+default_config,Random (C1),RL Self-Play (C6),2 - 0 - 198,0.01,"[0.003, 0.036]","[0.000, 0.025]",0.01,0.01
+default_config,Heuristic (C2),Alpha-Beta (C3),4 - 0 - 196,0.02,"[0.008, 0.050]","[0.005, 0.040]",0.01,0.03
+default_config,Heuristic (C2),MCTS (C4),34 - 8 - 158,0.19,"[0.142, 0.250]","[0.142, 0.245]",0.16,0.22
+default_config,Heuristic (C2),MCTS-leaf (C4b),15 - 4 - 181,0.085,"[0.054, 0.132]","[0.050, 0.128]",0.11,0.06
+default_config,Heuristic (C2),NN Sup (C5),62 - 3 - 135,0.3175,"[0.257, 0.385]","[0.255, 0.380]",0.305,0.33
+default_config,Heuristic (C2),RL Self-Play (C6),41 - 2 - 157,0.21,"[0.159, 0.272]","[0.152, 0.270]",0.22,0.2
+default_config,Alpha-Beta (C3),MCTS (C4),174 - 4 - 22,0.88,"[0.828, 0.918]","[0.828, 0.925]",0.875,0.885
+default_config,Alpha-Beta (C3),MCTS-leaf (C4b),156 - 1 - 43,0.7825,"[0.720, 0.834]","[0.730, 0.838]",0.76,0.805
+default_config,Alpha-Beta (C3),NN Sup (C5),173 - 2 - 25,0.87,"[0.816, 0.910]","[0.828, 0.915]",0.83,0.91
+default_config,Alpha-Beta (C3),RL Self-Play (C6),159 - 8 - 33,0.815,"[0.755, 0.863]","[0.762, 0.863]",0.79,0.84
+default_config,MCTS (C4),MCTS-leaf (C4b),74 - 5 - 121,0.3825,"[0.318, 0.451]","[0.320, 0.443]",0.265,0.5
+default_config,MCTS (C4),NN Sup (C5),87 - 6 - 107,0.45,"[0.383, 0.519]","[0.380, 0.520]",0.385,0.515
+default_config,MCTS (C4),RL Self-Play (C6),92 - 5 - 103,0.4725,"[0.404, 0.542]","[0.403, 0.542]",0.485,0.46
+default_config,MCTS-leaf (C4b),NN Sup (C5),125 - 4 - 71,0.635,"[0.566, 0.699]","[0.578, 0.693]",0.625,0.645
+default_config,MCTS-leaf (C4b),RL Self-Play (C6),130 - 4 - 66,0.66,"[0.592, 0.722]","[0.590, 0.728]",0.61,0.71
+default_config,NN Sup (C5),RL Self-Play (C6),104 - 9 - 87,0.5425,"[0.473, 0.610]","[0.477, 0.608]",0.465,0.62

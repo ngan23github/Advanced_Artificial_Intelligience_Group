@@ -1,0 +1,15 @@
+﻿Mode,Agent,key,Score as Black (Đi trước),Score as White (Đi sau),Diff (Black - White)
+time_per_move,Random (C1),random,0.0042,0.0108,-0.0067
+time_per_move,Heuristic (C2),heuristic,0.2975,0.31,-0.0125
+time_per_move,Alpha-Beta (C3),alphabeta,0.9508,0.955,-0.0042
+time_per_move,MCTS (C4),mcts,0.4667,0.4883,-0.0217
+time_per_move,MCTS-leaf (C4b),mcts_leaf,0.7667,0.7925,-0.0258
+time_per_move,NN Sup (C5),nn,0.4608,0.51,-0.0492
+time_per_move,RL Self-Play (C6),rl,0.4908,0.4958,-0.005
+default_config,Random (C1),random,0.0058,0.0108,-0.005
+default_config,Heuristic (C2),heuristic,0.3,0.3042,-0.0042
+default_config,Alpha-Beta (C3),alphabeta,0.8708,0.905,-0.0342
+default_config,MCTS (C4),mcts,0.505,0.5733,-0.0683
+default_config,MCTS-leaf (C4b),mcts_leaf,0.6433,0.7017,-0.0583
+default_config,NN Sup (C5),nn,0.5042,0.5792,-0.075
+default_config,RL Self-Play (C6),rl,0.5267,0.57,-0.0433
