@@ -1,0 +1,13 @@
+﻿Mode,Agent A,Agent B,W - D - L (A),Score A,Wilson 95% CI,Pair-Bootstrap 95% CI,Score A (Black),Score A (White)
+time_per_move,Alpha-Beta (C3),MCTS (C4),195 - 0 - 5,0.975,"[0.943, 0.989]","[0.955, 0.995]",0.97,0.98
+time_per_move,Alpha-Beta (C3),MCTS-leaf (C4b),161 - 5 - 34,0.8175,"[0.758, 0.865]","[0.762, 0.870]",0.795,0.84
+time_per_move,MCTS (C4),MCTS-leaf (C4b),45 - 2 - 153,0.23,"[0.177, 0.293]","[0.175, 0.292]",0.195,0.265
+time_per_move,MCTS (C4),NN Sup (C5),91 - 2 - 107,0.46,"[0.392, 0.529]","[0.388, 0.532]",0.425,0.495
+time_per_move,MCTS (C4),RL Self-Play (C6),81 - 6 - 113,0.42,"[0.354, 0.489]","[0.347, 0.492]",0.48,0.36
+time_per_move,NN Sup (C5),RL Self-Play (C6),104 - 9 - 87,0.5425,"[0.473, 0.610]","[0.477, 0.608]",0.465,0.62
+default_config,Alpha-Beta (C3),MCTS (C4),174 - 4 - 22,0.88,"[0.828, 0.918]","[0.828, 0.925]",0.875,0.885
+default_config,Alpha-Beta (C3),MCTS-leaf (C4b),156 - 1 - 43,0.7825,"[0.720, 0.834]","[0.730, 0.838]",0.76,0.805
+default_config,MCTS (C4),MCTS-leaf (C4b),74 - 5 - 121,0.3825,"[0.318, 0.451]","[0.320, 0.443]",0.265,0.5
+default_config,MCTS (C4),NN Sup (C5),87 - 6 - 107,0.45,"[0.383, 0.519]","[0.380, 0.520]",0.385,0.515
+default_config,MCTS (C4),RL Self-Play (C6),92 - 5 - 103,0.4725,"[0.404, 0.542]","[0.403, 0.542]",0.485,0.46
+default_config,NN Sup (C5),RL Self-Play (C6),104 - 9 - 87,0.5425,"[0.473, 0.610]","[0.477, 0.608]",0.465,0.62

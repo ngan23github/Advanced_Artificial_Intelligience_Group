@@ -1,0 +1,5 @@
+﻿Mode,Agent,Score,Bootstrap 95% CI,Avg Nodes / Move,Mean Latency (ms),p95 Latency (ms),Over-budget Moves
+time_per_move,alphabeta,0.865,"[0.815, 0.910]",12987.4,395.48,479.6,0
+time_per_move,alphabeta_nopruning,0.135,"[0.090, 0.185]",12540.1,421.73,480.11,0
+default_config,alphabeta,0.5,"[0.500, 0.500]",1060.5,33.92,112.46,0
+default_config,alphabeta_nopruning,0.5,"[0.500, 0.500]",8501.6,294.67,984.2,0

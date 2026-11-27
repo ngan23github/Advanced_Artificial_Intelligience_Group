@@ -9,13 +9,13 @@ from eval.tournament import load_yaml, run_round_robin
 
 EXPERIMENTS = {
     "alphabeta_pruning": ["alphabeta", "alphabeta_nopruning"],
-    "mcts_simulations": ["mcts_100", "mcts_500", "mcts", "mcts_5000"],
-    "heuristic_components": [
-        "alphabeta",
-        "alphabeta_discs_only",
-        "heuristic",
-        "heuristic_discs_only",
-    ],
+    # "mcts_simulations": ["mcts_100", "mcts_500", "mcts", "mcts_5000"],
+    # "heuristic_components": [
+    #     "alphabeta",
+    #     "alphabeta_discs_only",
+    #     "heuristic",
+    #     "heuristic_discs_only",
+    # ],
 }
 
 
@@ -43,7 +43,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Run Othello ablation experiments")
     parser.add_argument("--config", default="configs/tournament.yaml")
     parser.add_argument("--agents-config", help="override agents YAML")
-    parser.add_argument("--out", default="results/logs/ablations")
+    parser.add_argument("--out", default="results/logs/ablations_v2")
     parser.add_argument("--games", type=int, help="override games per pair")
     parser.add_argument("--workers", type=int, default=1)
     args = parser.parse_args(argv)

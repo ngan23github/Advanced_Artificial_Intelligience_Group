@@ -1,0 +1,13 @@
+﻿Chế độ,Đối thủ,Score NN,Score RL,Chênh lệch (RL - NN)
+time_per_move,Random (C1),0.98,0.99,0.01
+time_per_move,Heuristic (C2),0.6825,0.79,0.1075
+time_per_move,Alpha-Beta (C3),0.02,0.045,0.025
+time_per_move,MCTS (C4),0.54,0.58,0.04
+time_per_move,MCTS-leaf (C4b),0.1475,0.0975,-0.05
+time_per_move,TỔNG THỂ (Mean Score),0.4854,0.4933,0.0079
+default_config,Random (C1),0.98,0.99,0.01
+default_config,Heuristic (C2),0.6825,0.79,0.1075
+default_config,Alpha-Beta (C3),0.13,0.185,0.055
+default_config,MCTS (C4),0.55,0.5275,-0.0225
+default_config,MCTS-leaf (C4b),0.365,0.34,-0.025
+default_config,TỔNG THỂ (Mean Score),0.5417,0.5483,0.0067

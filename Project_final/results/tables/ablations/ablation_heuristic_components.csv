@@ -1,0 +1,13 @@
+﻿Mode,Agent A,Agent B,W - D - L (A),Score A,Bootstrap 95% CI
+time_per_move,Alpha-Beta (Full Eval),Alpha-Beta (Discs Only),99 - 0 - 1,0.99,"[0.970, 1.000]"
+time_per_move,Alpha-Beta (Full Eval),Heuristic (Full Rules),99 - 1 - 0,0.995,"[0.985, 1.000]"
+time_per_move,Alpha-Beta (Full Eval),Heuristic (Discs Only),100 - 0 - 0,1.0,"[1.000, 1.000]"
+time_per_move,Alpha-Beta (Discs Only),Heuristic (Full Rules),30 - 0 - 70,0.3,"[0.210, 0.390]"
+time_per_move,Alpha-Beta (Discs Only),Heuristic (Discs Only),96 - 1 - 3,0.965,"[0.930, 0.995]"
+time_per_move,Heuristic (Full Rules),Heuristic (Discs Only),98 - 0 - 2,0.98,"[0.950, 1.000]"
+default_config,Alpha-Beta (Full Eval),Alpha-Beta (Discs Only),96 - 1 - 3,0.965,"[0.910, 1.000]"
+default_config,Alpha-Beta (Full Eval),Heuristic (Full Rules),100 - 0 - 0,1.0,"[1.000, 1.000]"
+default_config,Alpha-Beta (Full Eval),Heuristic (Discs Only),100 - 0 - 0,1.0,"[1.000, 1.000]"
+default_config,Alpha-Beta (Discs Only),Heuristic (Full Rules),17 - 2 - 81,0.18,"[0.110, 0.260]"
+default_config,Alpha-Beta (Discs Only),Heuristic (Discs Only),89 - 3 - 8,0.905,"[0.845, 0.960]"
+default_config,Heuristic (Full Rules),Heuristic (Discs Only),98 - 0 - 2,0.98,"[0.950, 1.000]"

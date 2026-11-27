@@ -1,0 +1,8 @@
+﻿Agent,key,Total Moves,Mean Latency (ms),Median p50 (ms),p95 Latency (ms),Max Latency (ms),Avg Nodes / Move,Avg Sims / Move,Peak RAM (MB),Over-budget Moves
+Random (C1),random,31688,0.006,0.006,0.01,1.86,,,0.006,0
+Heuristic (C2),heuristic,33005,0.473,0.442,1.225,82.6,7.6,0.0,0.01,0
+Alpha-Beta (C3),alphabeta,34579,20.824,14.247,76.726,207.42,927.6,0.0,0.006,0
+MCTS (C4),mcts,32251,703.639,713.427,1647.54,2949.84,1676.2,1813.7,0.74,0
+MCTS-leaf (C4b),mcts_leaf,33458,61.037,66.432,117.463,375.14,877.1,953.7,,0
+NN Sup (C5),nn,33418,6.238,6.145,12.077,132.39,,,0.006,0
+RL Self-Play (C6),rl,33151,6.36,6.135,12.127,117.06,,,0.006,0
